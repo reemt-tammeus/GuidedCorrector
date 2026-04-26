@@ -3,344 +3,111 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Check Prompt Sherlock - Guided Writing Evaluator</title>
-    <style>
-        :root { 
-            --primary: #2c3e50; 
-            --secondary: #3498db; 
-            --error: #e74c3c; 
-            --success: #27ae60; 
-            --bg: #f4f7f6;
-            --white: #ffffff;
-        }
-        body { 
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
-            margin: 0; padding: 0; 
-            display: flex; flex-direction: column; 
-            height: 100vh; background-color: var(--bg); 
-            color: #333;
-        }
-        
-        .container { flex: 1; display: flex; flex-direction: column; overflow: hidden; padding: 20px; box-sizing: border-box; max-width: 1400px; margin: 0 auto; width: 100%; }
-        .step { background: var(--white); padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); margin-bottom: 20px; flex-shrink: 0; }
-        .hidden { display: none !important; }
-        
-        h1, h2, h3 { color: var(--primary); margin-top: 0; border-bottom: 2px solid #eee; padding-bottom: 10px; }
-        
-        label { font-weight: bold; display: block; margin-top: 15px; margin-bottom: 8px; font-size: 0.9em; text-transform: uppercase; letter-spacing: 0.5px; }
-        select, textarea { width: 100%; padding: 12px; border: 1.5px solid #dfe6e9; border-radius: 6px; box-sizing: border-box; font-family: inherit; font-size: 1em; transition: border-color 0.2s; }
-        select:focus, textarea:focus { border-color: var(--secondary); outline: none; }
-        
-        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; }
-        
-        button { cursor: pointer; padding: 12px 20px; border: none; border-radius: 6px; font-weight: bold; transition: all 0.2s; font-size: 1em; }
-        .btn-primary { background: var(--primary); color: white; margin-top: 20px; width: 100%; }
-        .btn-primary:hover { background: #1a252f; transform: translateY(-1px); }
-        .btn-action { background: var(--secondary); color: white; margin-top: 15px; }
-        .btn-success { background: var(--success); color: white; }
-        .btn-reject { background: var(--error); color: white; padding: 6px 12px; font-size: 0.85em; }
-        
-        #dashboard { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; flex: 1; min-height: 0; }
-        .scroll-area { background: var(--white); border-radius: 12px; padding: 25px; overflow-y: auto; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
-        
-        .card { background: #fdfdfd; border-left: 6px solid var(--secondary); padding: 18px; margin-bottom: 15px; border-radius: 4px; display: flex; justify-content: space-between; align-items: flex-start; border: 1px solid #edf2f7; }
-        .card-content { flex: 1; padding-right: 15px; }
-        .correction-text { font-size: 1.1em; margin-bottom: 8px; }
-        .correction-text b { color: var(--success); }
-        .correction-text s { color: var(--error); opacity: 0.7; }
-        .explanation { color: #636e72; font-size: 0.95em; line-height: 1.4; }
-        
-        .minor-list { background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; padding: 15px; margin-top: 15px; }
-        .spelling-row { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #dee2e6; }
-        .spelling-row:last-child { border-bottom: none; }
-        .badge { background: #dfe6e9; padding: 3px 8px; border-radius: 4px; font-size: 0.75em; margin-right: 12px; color: #2d3436; font-weight: bold; }
-        
-        .gi-group { display: flex; gap: 15px; margin-top: 12px; margin-bottom: 25px; }
-        .gi-btn { background: #dfe6e9; color: #2d3436; flex: 1; padding: 15px; font-size: 1.3em; border-radius: 8px; }
-        .gi-btn.active { background: var(--secondary); color: white; transform: scale(1.05); }
-        
-        .formalities-list { list-style: none; padding: 0; margin-bottom: 20px; }
-        .formalities-list li { margin-bottom: 8px; padding: 10px; border-radius: 6px; background: #f1f2f6; font-weight: 500; }
-        
-        #studentTextDisplay { white-space: pre-wrap; line-height: 1.7; color: #2d3436; border: 2px solid #f1f2f6; padding: 20px; border-radius: 8px; background: #fff; font-size: 1.05em; }
-    </style>
+    <title>GuidedCorrectork</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<div class="container">
-    <div id="step1" class="step">
-        <h2>1. Text-Setup & Prompt-Brücke</h2>
-        <div class="grid-2">
-            <div>
-                <label>Text-Kategorie:</label>
-                <select id="textType" onchange="updateSubtypes()">
-                    <option value="letter">Letter (Formal/Informal)</option>
-                    <option value="creative">Creative Text (Blog/Article/Diary)</option>
-                </select>
-                
-                <label>Unterart:</label>
-                <select id="subType">
-                    <option value="personal">Personal Letter</option>
-                    <option value="application">Letter of Application</option>
-                    <option value="complaint">Letter of Complaint</option>
-                </select>
+<div id="bg-layer"></div>
+<div id="bg-overlay"></div>
+
+<div id="screen-1" class="screen active">
+    <div class="glass-box">
+        <h1>GuidedCorrectorK</h1>
+        <h2>Guided Writing Evaluation with AI assistance</h2>
+        
+        <label>Mode</label>
+        <select id="appMode">
+            <option value="school">School</option>
+            <option value="private">Private</option>
+        </select>
+
+        <label>Type of Text</label>
+        <select id="textType" onchange="updateSubtypes()">
+            <option value="letter">Letter</option>
+            <option value="creative">Creative Text</option>
+        </select>
+        
+        <label>Subgenre</label>
+        <select id="subType">
+            <option value="personal">Personal Letter</option>
+            <option value="application">Letter of Application</option>
+            <option value="complaint">Letter of Complaint</option>
+        </select>
+
+        <button class="btn-start" onclick="navTo('screen-2')">Texteingabe starten</button>
+        <div class="branding-note">created by Mr. T. & Master E.</div>
+    </div>
+</div>
+
+<div id="screen-2" class="screen">
+    <div class="work-container">
+        <div class="split-view">
+            <div class="col-1-3 panel">
+                <h2>Content Points (Prompts)</h2>
+                <textarea id="contentPoints" placeholder="Z.B. - describe your problem..."></textarea>
             </div>
-            <div>
-                <label>Content Points (Prompts):</label>
-                <textarea id="contentPoints" rows="4" placeholder="Z.B. - describe your problem / - ask for a refund..."></textarea>
+            <div class="col-2-3 panel">
+                <h2>Student's Text</h2>
+                <textarea id="studentText" placeholder="Schülertext hier einfügen (200-350 Wörter)..."></textarea>
             </div>
         </div>
-        
-        <label>Schülertext (200-350 Wörter):</label>
-        <textarea id="studentText" rows="8" placeholder="Füge hier den Text des Schülers ein..."></textarea>
-        
-        <button class="btn-primary" onclick="copyPromptToClipboard()">📋 System-Prompt für ByLKI kopieren</button>
-        <p id="copyStatus" style="display:none; color: var(--success); text-align:center; font-weight:bold; margin-top:10px;">Prompt in die Zwischenablage kopiert! Jetzt in ByLKI einfügen.</p>
-    </div>
-
-    <div id="step2" class="step">
-        <h2>2. KI-Daten einlesen</h2>
-        <textarea id="jsonInput" rows="3" placeholder="Füge die komplette Antwort der ByLKI hier ein..."></textarea>
-        <button class="btn-action" onclick="loadDashboard()" style="width:100%">Analyse-Dashboard öffnen</button>
-    </div>
-
-    <div id="dashboard" class="hidden">
-        <div class="scroll-area">
-            <h3>Schülertext zur Kontrolle</h3>
-            <div id="studentTextDisplay"></div>
-            <br>
-            <button class="btn-success" style="width: 100%; padding: 20px; font-size: 1.2em;" onclick="generateRTF()">💾 Als .doc (RTF) exportieren</button>
-        </div>
-        
-        <div class="scroll-area">
-            <div id="formalitiesSection">
-                <h3>Formalitäten & General Impression</h3>
-                <ul class="formalities-list" id="formalChecklist"></ul>
-                <label>Punktzahl festlegen (max. 2 P.):</label>
-                <div class="gi-group" id="giButtons">
-                    <button class="gi-btn" onclick="updateGI(0)">0</button>
-                    <button class="gi-btn" onclick="updateGI(1)">1</button>
-                    <button class="gi-btn" onclick="updateGI(2)">2</button>
-                </div>
-            </div>
-
-            <h3>Grammatik-Lernpunkte</h3>
-            <div id="grammarArea"></div>
-            <p id="noGrammarMsg" class="hidden">Keine relevanten Grammatikfehler identifiziert.</p>
-
-            <h3 style="margin-top:30px;">Korrekturliste (Spelling & Syntax)</h3>
-            <button class="btn-success" style="width:100%; margin-bottom:10px;" onclick="alert('Korrekturen für Export vorgemerkt.')">Alle Korrekturen bestätigen</button>
-            <div class="minor-list" id="minorArea"></div>
+        <div class="panel" style="padding: 15px;">
+            <button class="btn-primary" onclick="copyPromptAndProceed()">System-Prompt für ByLKI kopieren & Weiter</button>
         </div>
     </div>
 </div>
 
-<script>
-    let rawData = null;
-    let errorsState = [];
+<div id="screen-3" class="screen">
+    <button class="emergency-exit" onclick="emergencyExit()">⚠️ Abbrechen & Text neu eingeben</button>
+    <div class="work-container" style="justify-content: center; align-items: center; max-width: 800px; margin: auto;">
+        <div class="panel" style="width: 100%; text-align: center;">
+            <h2 style="color: var(--success);">Prompt kopiert!</h2>
+            <p>Bitte wechseln Sie in die ByLKI, fügen Sie den System-Prompt in das Chat-Fenster ein und kopieren Sie das Ergebnis.</p>
+            <textarea id="jsonInput" rows="10" placeholder="Füge hier das KI-Ergebnis ein..." style="margin-top: 20px; margin-bottom: 20px;"></textarea>
+            <button class="btn-success" onclick="processData()">KI-Daten verarbeiten (Dashboard öffnen)</button>
+        </div>
+    </div>
+</div>
 
-    // --- LOGIK: UI UPDATES ---
-    function updateSubtypes() {
-        const main = document.getElementById('textType').value;
-        const sub = document.getElementById('subType');
-        if (main === 'letter') {
-            sub.innerHTML = '<option value="personal">Personal Letter</option><option value="application">Letter of Application</option><option value="complaint">Letter of Complaint</option>';
-        } else {
-            sub.innerHTML = '<option value="blog">Blog</option><option value="article">Article</option><option value="diary">Diary Entry</option>';
-        }
-    }
-
-    function updateGI(val) {
-        document.querySelectorAll('.gi-btn').forEach((b, i) => {
-            b.classList.toggle('active', i === val);
-        });
-    }
-
-    // --- LOGIK: PROMPT GENERIERUNG ---
-    function copyPromptToClipboard() {
-        const type = document.getElementById('textType').value;
-        const sub = document.getElementById('subType').selectedOptions[0].text;
-        const cp = document.getElementById('contentPoints').value;
-        const text = document.getElementById('studentText').value;
-
-        const systemPrompt = `Du bist der KI-Tutor "Check Prompt Sherlock" der Realschule Neutraubling.
-Textart: ${sub}
-Anforderung: Korrektur eines Guided Writing (B1+).
-
-Content Points:
-${cp}
-
-Schülertext:
-"""
-${text}
-"""
-
-DEIN AUFTRAG:
-Analysiere den Text akribisch. Erzeuge AUSSCHLIESSLICH ein JSON-Objekt ohne weiteren Text.
-
-STRUKTUR DES JSON:
-{
-  "formalities": ${type === 'letter' ? '{"salutation": true, "reference": true, "call_to_action": true, "closing": true, "suggested_gi": 2}' : 'null'},
-  "errors": [
-    {
-      "type": "grammar", // Nur für komplexe Fehler nach Liste 3.1
-      "original": "...",
-      "correction": "...",
-      "explanation": "Kurze deutsche Erklärung (nur bei grammar!)"
-    },
-    {
-      "type": "word_order", // Echte Syntaxfehler (SVO)
-      "original": "...",
-      "correction": "...",
-      "explanation": null // IMMER NULL
-    },
-    {
-      "type": "spelling", // Rechtschreibung
-      "original": "...",
-      "correction": "...",
-      "explanation": null // IMMER NULL
-    }
-  ]
-}
-
-WICHTIGE REGELN:
-- Erfasse ALLE Spelling- und ALLE Word-Order-Fehler (Syntax).
-- Ignoriere stilistische Verschönerungen; markiere NUR echte Regelverstöße.
-- Bei Word-Order und Spelling darf KEINE Erklärung ("explanation": null) geliefert werden.`;
-
-        navigator.clipboard.writeText(systemPrompt).then(() => {
-            const status = document.getElementById('copyStatus');
-            status.style.display = 'block';
-            setTimeout(() => status.style.display = 'none', 4000);
-        });
-    }
-
-    // --- LOGIK: DASHBOARD & TRIAGE ---
-    function loadDashboard() {
-        const input = document.getElementById('jsonInput').value;
-        try {
-            const extracted = input.match(/\{[\s\S]*\}/);
-            if (!extracted) throw new Error("Kein JSON gefunden.");
-            
-            rawData = JSON.parse(extracted[0]);
-            errorsState = rawData.errors || [];
-            
-            document.getElementById('studentTextDisplay').innerText = document.getElementById('studentText').value;
-            
-            renderFormalities();
-            renderTriage();
-            
-            document.getElementById('step1').classList.add('hidden');
-            document.getElementById('step2').classList.add('hidden');
-            document.getElementById('dashboard').classList.remove('hidden');
-        } catch (e) {
-            alert("Fehler: Das JSON konnte nicht verarbeitet werden. Bitte prüfe die KI-Antwort.");
-        }
-    }
-
-    function renderFormalities() {
-        const section = document.getElementById('formalitiesSection');
-        const list = document.getElementById('formalChecklist');
-        const f = rawData.formalities;
-
-        if (!f) {
-            section.classList.add('hidden');
-            updateGI(2);
-            return;
-        }
-
-        section.classList.remove('hidden');
-        list.innerHTML = "";
-        const mapping = { salutation: "Anrede", reference: "Bezug", call_to_action: "Forderung/Angebot", closing: "Grußformel" };
+<div id="screen-4" class="screen">
+    <button class="emergency-exit" onclick="emergencyExit()">⚠️ Abbrechen & Text neu eingeben</button>
+    <div class="work-container">
         
-        for (let key in mapping) {
-            const present = f[key];
-            list.innerHTML += `<li>${present ? '✅' : '❌'} ${mapping[key]}</li>`;
-        }
-        updateGI(f.suggested_gi || 2);
-    }
+        <div id="triage-grid" class="split-view">
+            <div class="col-1-3 panel scroll-box">
+                <div id="formalitiesSection">
+                    <h3>General Impression & Formalities</h3>
+                    <ul class="formalities-list" id="formalChecklist" style="padding:0;"></ul>
+                    <label>Points (max 2):</label>
+                    <div class="gi-group" id="giButtons">
+                        <button class="gi-btn" onclick="updateGI(0)">0</button>
+                        <button class="gi-btn" onclick="updateGI(1)">1</button>
+                        <button class="gi-btn" onclick="updateGI(2)">2</button>
+                    </div>
+                </div>
+                
+                <h3 style="margin-top: 30px;">Abschluss</h3>
+                <button id="btn-export" class="btn-success" style="padding: 20px;" onclick="generateRTF()">💾 RTF-Datei generieren</button>
+                
+                <div id="loop-controls">
+                    <button class="btn-primary" onclick="loopSameGenre()">🔄 New text with SAME genre and SAME Content Points</button>
+                    <button class="btn-danger" onclick="loopNewGenre()">🏠 New text with NEW genre</button>
+                </div>
+            </div>
 
-    function renderTriage() {
-        const gArea = document.getElementById('grammarArea');
-        const mArea = document.getElementById('minorArea');
-        gArea.innerHTML = "";
-        mArea.innerHTML = "";
+            <div class="col-2-3 panel scroll-box">
+                <h3>Major Learning Points (Grammatik)</h3>
+                <div id="grammarArea"></div>
+                
+                <h3 style="margin-top: 30px;">Correction List (Spelling & Syntax)</h3>
+                <div id="minorArea"></div>
+            </div>
+        </div>
 
-        let hasGrammar = false;
+    </div>
+</div>
 
-        errorsState.forEach((err, i) => {
-            if (!err) return;
-            if (err.type === 'grammar') {
-                hasGrammar = true;
-                gArea.innerHTML += `
-                    <div class="card" id="e-${i}">
-                        <div class="card-content">
-                            <div class="correction-text"><s>${err.original}</s> &rarr; <b>${err.correction}</b></div>
-                            <div class="explanation">${err.explanation}</div>
-                        </div>
-                        <button class="btn-reject" onclick="deleteError(${i})">Löschen</button>
-                    </div>`;
-            } else {
-                const label = err.type === 'word_order' ? 'SYNTAX' : 'SPELLING';
-                mArea.innerHTML += `
-                    <div class="spelling-row" id="e-${i}">
-                        <span><span class="badge">${label}</span><s>${err.original}</s> &rarr; <b>${err.correction}</b></span>
-                        <button class="btn-reject" onclick="deleteError(${i})">X</button>
-                    </div>`;
-            }
-        });
-        document.getElementById('noGrammarMsg').classList.toggle('hidden', hasGrammar);
-    }
-
-    function deleteError(i) {
-        errorsState[i] = null;
-        document.getElementById(`e-${i}`).remove();
-    }
-
-    // --- LOGIK: RTF EXPORT ---
-    function generateRTF() {
-        const sub = document.getElementById('subType').selectedOptions[0].text;
-        const gi = document.querySelector('.gi-btn.active').innerText;
-        
-        const validErrors = errorsState.filter(e => e !== null);
-        const grammarRows = validErrors.filter(e => e.type === 'grammar').map(e => 
-            `<tr><td><s>${e.original}</s></td><td><b>${e.correction}</b><br><small>${e.explanation}</small></td></tr>`
-        ).join('');
-        
-        const minorRows = validErrors.filter(e => e.type !== 'grammar').map(e => 
-            `<tr><td>[${e.type.toUpperCase()}] <s>${e.original}</s> &rarr; <b>${e.correction}</b></td></tr>`
-        ).join('');
-
-        const html = `
-        <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
-        <head><meta charset="utf-8"><style>
-            body { font-family: Arial, sans-serif; }
-            table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-            th, td { border: 1px solid black; padding: 8px; text-align: left; vertical-align: top; }
-            th { background: #f2f2f2; }
-            .score { border: 2px solid black; padding: 10px; font-weight: bold; width: 250px; }
-        </style></head>
-        <body>
-            <h1>Feedback: ${sub}</h1>
-            <div class="score">General Impression Score: ${gi} / 2 P.</div>
-            <h2>PART B - Grammar & Learning Points</h2>
-            <table><tr><th>Original</th><th>Korrektur & Erklärung</th></tr>${grammarRows || '<tr><td colspan="2">Keine gravierenden Fehler.</td></tr>'}</table>
-            <h2>PART C - Correction List (Spelling & Word Order)</h2>
-            <table><tr><th>Fehler & Korrektur</th></tr>${minorRows || '<tr><td>Keine Spelling/Syntax-Fehler.</td></tr>'}</table>
-            <h2>PART D - Final Scoring</h2>
-            <table><tr><th>Kategorie</th><th>Punkte</th></tr><tr><td>Content</td><td> / 10</td></tr><tr><td>Language</td><td> / 18</td></tr><tr><td>General Impression</td><td>${gi} / 2</td></tr><tr style="background:#f2f2f2"><td><b>GESAMT</b></td><td><b> / 30</b></td></tr></table>
-        </body></html>`;
-
-        const blob = new Blob(['\ufeff', html], { type: 'application/msword' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `Feedback_${sub.replace(' ', '_')}.doc`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-    }
-</script>
-
+<script src="app.js"></script>
 </body>
 </html>
