@@ -9,7 +9,7 @@ body, html {
     margin: 0; padding: 0; 
     height: 100%; 
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-    overflow: hidden; /* Verhindert Scrollen auf Body-Ebene */
+    overflow: hidden; 
 }
 
 /* --- HINTERGRUND & FILTER --- */
@@ -24,12 +24,12 @@ body, html {
 
 #bg-overlay {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0, 0, 0, 0); /* Startet transparent */
+    background: rgba(0, 0, 0, 0); 
     z-index: -1;
     transition: background 0.5s ease;
 }
 
-body.work-mode #bg-overlay { background: rgba(0, 0, 0, 0.85); } /* Starker Filter für Arbeitsscreens */
+body.work-mode #bg-overlay { background: rgba(0, 0, 0, 0.85); }
 
 /* --- SCREEN MANAGEMENT --- */
 .screen { 
@@ -60,7 +60,6 @@ body.work-mode #bg-overlay { background: rgba(0, 0, 0, 0.85); } /* Starker Filte
     100% { opacity: 1; transform: scale(1); filter: blur(0px); }
 }
 
-/* Lesbare weiße Überschriften in der dunklen Box */
 .glass-box h1 { margin-top: 0; letter-spacing: 2px; }
 .glass-box h2, .glass-box h3 {
     color: #ffffff;
@@ -84,7 +83,6 @@ body.work-mode #bg-overlay { background: rgba(0, 0, 0, 0.85); } /* Starker Filte
     text-align: left;
 }
 
-/* Invertierte Dropdown-Menüs (Dunkel mit weißer Schrift) */
 .glass-box select { 
     width: 100%; 
     padding: 12px; 
@@ -96,7 +94,6 @@ body.work-mode #bg-overlay { background: rgba(0, 0, 0, 0.85); } /* Starker Filte
     font-weight: bold;
 }
 
-/* Fix für das geöffnete Dropdown-Menü in Windows/Mac */
 .glass-box select option {
     background: #2c3e50;
     color: white;
@@ -116,45 +113,77 @@ body.work-mode #bg-overlay { background: rgba(0, 0, 0, 0.85); } /* Starker Filte
     display: flex; flex-direction: column; gap: 20px;
     height: 100%;
 }
+
 .panel {
-    background: #fff; padding: 25px; border-radius: 12px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(15px);
+    border: 1.5px solid rgba(255, 255, 255, 0.2);
+    border-radius: 16px;
+    padding: 25px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    color: #fff;
 }
+
 .split-view { display: flex; gap: 20px; flex: 1; min-height: 400px;}
 .col-1-3 { flex: 1; display: flex; flex-direction: column; }
 .col-2-3 { flex: 2; display: flex; flex-direction: column; }
 
+.panel h2, .panel h3 { 
+    margin-top: 0; 
+    color: #ffffff; 
+    text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+}
+
 textarea { 
-    width: 100%; flex: 1; padding: 15px; border: 2px solid #ddd; 
+    width: 100%; flex: 1; padding: 15px; 
+    background: rgba(0, 0, 0, 0.6); 
+    color: white; 
+    border: 1px solid rgba(255, 255, 255, 0.3); 
     border-radius: 8px; font-size: 1.05em; font-family: inherit; resize: none; box-sizing: border-box;
 }
-textarea:focus { border-color: var(--secondary); outline: none; }
-h2, h3 { margin-top: 0; color: var(--primary); }
 
-/* --- BUTTONS --- */
-button { cursor: pointer; padding: 15px 25px; border: none; border-radius: 8px; font-weight: bold; font-size: 1.1em; transition: all 0.2s; }
+textarea::placeholder { color: rgba(255, 255, 255, 0.5); }
 
-/* Start-Button im Dropdown-Look, aber mit grüner Schrift */
+textarea:focus { 
+    border-color: var(--secondary); 
+    outline: none; 
+    background: rgba(0, 0, 0, 0.8);
+}
+
+/* --- BUTTONS ALLGEMEIN --- */
+button { 
+    cursor: pointer; 
+    padding: 15px 25px; 
+    border: 1px solid rgba(255, 255, 255, 0.3); 
+    border-radius: 8px; 
+    font-weight: bold; 
+    font-size: 1.1em; 
+    transition: all 0.15s ease-in-out; 
+    outline: none;
+}
+
+/* Der gewünschte Leucht-Effekt beim Klicken für ALLE Buttons */
+button:active {
+    transform: scale(0.98); /* Minimaler Druck-Effekt */
+    box-shadow: 0 0 0 3px currentColor; /* Leuchtende Umrandung in Textfarbe */
+}
+
+/* Spezifische Button-Farben */
 .btn-start { 
     background: rgba(0, 0, 0, 0.6); 
     color: var(--success); 
-    border: 1px solid rgba(255, 255, 255, 0.3); 
     margin-top: 30px; 
     width: 100%; 
-}
-.btn-start:hover {
-    background: rgba(0, 0, 0, 0.9);
-    border-color: var(--success);
-    transform: translateY(-2px);
 }
 
 .btn-primary { background: var(--primary); color: white; width: 100%; }
 .btn-success { background: var(--success); color: white; width: 100%; }
 .btn-danger { background: var(--error); color: white; margin-top: 10px; width: 100%;}
 
-.btn-primary:hover, .btn-success:hover, .btn-danger:hover { 
-    transform: translateY(-2px); 
-    filter: brightness(1.1); 
+button:hover {
+    transform: translateY(-2px);
+    filter: brightness(1.2);
+    border-color: rgba(255, 255, 255, 0.6);
 }
 
 /* --- NOTAUSGANG --- */
@@ -164,24 +193,48 @@ button { cursor: pointer; padding: 15px 25px; border: none; border-radius: 8px; 
     padding: 8px 15px; border-radius: 20px; text-decoration: none;
     font-size: 0.9em; border: 1px solid rgba(231, 76, 60, 0.5); cursor: pointer; z-index: 100;
 }
-.emergency-exit:hover { background: var(--error); }
 
 /* --- DASHBOARD ELEMENTE --- */
 #triage-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
 .scroll-box { max-height: 70vh; overflow-y: auto; padding-right: 10px; }
 
-.card { background: #fdfdfd; border-left: 6px solid var(--secondary); padding: 15px; margin-bottom: 15px; border-radius: 4px; display: flex; justify-content: space-between; border: 1px solid #edf2f7; }
-.spelling-row { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #eee; background: #f9f9f9; }
-.btn-reject { background: var(--error); color: white; padding: 5px 10px; font-size: 0.85em; border-radius: 4px; }
+.card { 
+    background: rgba(255, 255, 255, 0.05); 
+    border-left: 6px solid var(--secondary); 
+    padding: 15px; margin-bottom: 15px; border-radius: 4px; 
+    display: flex; justify-content: space-between; 
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.spelling-row { 
+    display: flex; justify-content: space-between; padding: 10px; 
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1); 
+    background: rgba(0, 0, 0, 0.3); 
+}
+
+.btn-reject { 
+    background: var(--error); 
+    color: white; 
+    padding: 5px 10px; 
+    font-size: 0.85em; 
+    border-radius: 4px; 
+    border: none;
+}
 
 .gi-group { display: flex; gap: 10px; margin-top: 10px; margin-bottom: 20px; }
-.gi-btn { background: #eee; flex: 1; padding: 15px; font-size: 1.2em; }
-.gi-btn.active { background: var(--secondary); color: white; }
-.formalities-list li { margin-bottom: 5px; list-style: none; }
+.gi-btn { 
+    background: rgba(0, 0, 0, 0.6); 
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    flex: 1; padding: 15px; font-size: 1.2em; 
+}
+.gi-btn.active { background: var(--secondary); color: white; border-color: var(--secondary); }
 
-/* --- LOOP BUTTONS (BELOHNUNG) --- */
+/* --- LOOP BUTTONS --- */
 #loop-controls {
-    display: none; /* Erst nach Export sichtbar */
+    display: none; 
     flex-direction: column;
     gap: 10px; margin-top: 20px;
 }
