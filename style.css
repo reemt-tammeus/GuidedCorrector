@@ -60,11 +60,46 @@ body.work-mode #bg-overlay { background: rgba(0, 0, 0, 0.85); } /* Starker Filte
     100% { opacity: 1; transform: scale(1); filter: blur(0px); }
 }
 
+/* Lesbare weiße Überschriften in der dunklen Box */
 .glass-box h1 { margin-top: 0; letter-spacing: 2px; }
-.glass-box label { display: block; margin-top: 20px; margin-bottom: 5px; font-size: 0.9em; text-transform: uppercase; letter-spacing: 1px; opacity: 0.8; text-align: left;}
+.glass-box h2, .glass-box h3 {
+    color: #ffffff;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+    margin-top: 5px;
+}
+.glass-box h3 {
+    font-weight: normal;
+    opacity: 0.8;
+    margin-bottom: 30px;
+}
+
+.glass-box label { 
+    display: block; 
+    margin-top: 20px; 
+    margin-bottom: 5px; 
+    font-size: 0.9em; 
+    text-transform: uppercase; 
+    letter-spacing: 1px; 
+    opacity: 0.8; 
+    text-align: left;
+}
+
+/* Invertierte Dropdown-Menüs (Dunkel mit weißer Schrift) */
 .glass-box select { 
-    width: 100%; padding: 12px; border-radius: 8px; border: none; 
-    background: rgba(255,255,255,0.9); font-size: 1.1em; font-weight: bold;
+    width: 100%; 
+    padding: 12px; 
+    border-radius: 8px; 
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    background: rgba(0, 0, 0, 0.6); 
+    color: white; 
+    font-size: 1.1em; 
+    font-weight: bold;
+}
+
+/* Fix für das geöffnete Dropdown-Menü in Windows/Mac */
+.glass-box select option {
+    background: #2c3e50;
+    color: white;
 }
 
 .branding-note {
@@ -98,11 +133,29 @@ h2, h3 { margin-top: 0; color: var(--primary); }
 
 /* --- BUTTONS --- */
 button { cursor: pointer; padding: 15px 25px; border: none; border-radius: 8px; font-weight: bold; font-size: 1.1em; transition: all 0.2s; }
-.btn-start { background: var(--secondary); color: white; margin-top: 30px; width: 100%; }
+
+/* Start-Button im Dropdown-Look, aber mit grüner Schrift */
+.btn-start { 
+    background: rgba(0, 0, 0, 0.6); 
+    color: var(--success); 
+    border: 1px solid rgba(255, 255, 255, 0.3); 
+    margin-top: 30px; 
+    width: 100%; 
+}
+.btn-start:hover {
+    background: rgba(0, 0, 0, 0.9);
+    border-color: var(--success);
+    transform: translateY(-2px);
+}
+
 .btn-primary { background: var(--primary); color: white; width: 100%; }
 .btn-success { background: var(--success); color: white; width: 100%; }
 .btn-danger { background: var(--error); color: white; margin-top: 10px; width: 100%;}
-button:hover { transform: translateY(-2px); filter: brightness(1.1); }
+
+.btn-primary:hover, .btn-success:hover, .btn-danger:hover { 
+    transform: translateY(-2px); 
+    filter: brightness(1.1); 
+}
 
 /* --- NOTAUSGANG --- */
 .emergency-exit {
