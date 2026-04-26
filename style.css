@@ -3,49 +3,132 @@
     --secondary: #3498db; 
     --error: #e74c3c; 
     --success: #27ae60; 
-    --bg: #ecf0f1;
 }
-body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; display: flex; flex-direction: column; height: 100vh; background-color: var(--bg); }
-h1, h2, h3 { color: var(--primary); margin-top: 0; }
 
-.container { flex: 1; display: flex; flex-direction: column; overflow: hidden; padding: 20px; box-sizing: border-box; }
-.step { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 20px; flex-shrink: 0; }
-.hidden { display: none !important; }
+body, html { 
+    margin: 0; padding: 0; 
+    height: 100%; 
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+    overflow: hidden; /* Verhindert Scrollen auf Body-Ebene */
+}
 
-/* Formulare & Eingaben */
-label { font-weight: bold; display: block; margin-top: 10px; margin-bottom: 5px; }
-select, textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-family: inherit; }
-textarea { resize: vertical; }
-.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+/* --- HINTERGRUND & FILTER --- */
+#bg-layer {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background-image: url('logo.jpg');
+    background-size: cover;
+    background-position: center;
+    z-index: -2;
+    transition: filter 0.5s ease;
+}
 
-/* Buttons */
-button { cursor: pointer; padding: 10px 15px; border: none; border-radius: 4px; font-weight: bold; transition: background 0.2s; }
-.btn-primary { background: var(--primary); color: white; margin-top: 15px; }
-.btn-primary:hover { background: #1a252f; }
-.btn-action { background: var(--secondary); color: white; margin-top: 10px; }
-.btn-success { background: var(--success); color: white; }
-.btn-reject { background: var(--error); color: white; padding: 5px 10px; font-size: 0.9em; }
+#bg-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0); /* Startet transparent */
+    z-index: -1;
+    transition: background 0.5s ease;
+}
 
-/* Dashboard Layout */
-#dashboard { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; flex: 1; min-height: 0; }
-.scroll-area { background: white; border-radius: 8px; padding: 20px; overflow-y: auto; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+body.work-mode #bg-overlay { background: rgba(0, 0, 0, 0.85); } /* Starker Filter für Arbeitsscreens */
 
-/* Triage Karten */
-.card { background: #f8f9fa; border-left: 5px solid var(--secondary); padding: 15px; margin-bottom: 15px; border-radius: 0 4px 4px 0; display: flex; justify-content: space-between; align-items: flex-start; }
-.card-content { flex: 1; padding-right: 15px; }
-.correction-text { font-size: 1.1em; margin-bottom: 5px; }
-.explanation { color: #555; font-size: 0.9em; font-style: italic; }
+/* --- SCREEN MANAGEMENT --- */
+.screen { 
+    display: none; 
+    width: 100%; height: 100%; 
+    flex-direction: column; 
+    align-items: center; 
+    padding: 20px; 
+    box-sizing: border-box; 
+    overflow-y: auto;
+}
+.screen.active { display: flex; }
 
-/* Minor Errors Liste */
-.minor-list { background: #f8f9fa; border: 1px solid #ddd; border-radius: 4px; padding: 10px; margin-top: 10px; }
-.spelling-row { display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #eee; }
-.spelling-row:last-child { border-bottom: none; }
-.badge { background: #eee; padding: 2px 6px; border-radius: 3px; font-size: 0.8em; margin-right: 10px; color: #555; }
+/* --- STARTBILDSCHIRM (GLASS BOX) --- */
+.glass-box {
+    width: 90%; max-width: 500px; padding: 40px; margin: auto;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(15px);
+    border: 1.5px solid rgba(255, 255, 255, 0.2);
+    border-radius: 28px;
+    text-align: center; color: #fff;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    animation: startupBlur 1.5s ease-out forwards;
+}
 
-/* General Impression Buttons */
+@keyframes startupBlur {
+    0% { opacity: 0; transform: scale(0.95); filter: blur(20px); }
+    100% { opacity: 1; transform: scale(1); filter: blur(0px); }
+}
+
+.glass-box h1 { margin-top: 0; letter-spacing: 2px; }
+.glass-box label { display: block; margin-top: 20px; margin-bottom: 5px; font-size: 0.9em; text-transform: uppercase; letter-spacing: 1px; opacity: 0.8; text-align: left;}
+.glass-box select { 
+    width: 100%; padding: 12px; border-radius: 8px; border: none; 
+    background: rgba(255,255,255,0.9); font-size: 1.1em; font-weight: bold;
+}
+
+.branding-note {
+    margin-top: 20px;
+    font-size: 0.7rem;
+    opacity: 0.6;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+/* --- ARBEITS-SCREENS (SCREEN 2, 3, 4) --- */
+.work-container {
+    width: 100%; max-width: 1400px;
+    display: flex; flex-direction: column; gap: 20px;
+    height: 100%;
+}
+.panel {
+    background: #fff; padding: 25px; border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+}
+.split-view { display: flex; gap: 20px; flex: 1; min-height: 400px;}
+.col-1-3 { flex: 1; display: flex; flex-direction: column; }
+.col-2-3 { flex: 2; display: flex; flex-direction: column; }
+
+textarea { 
+    width: 100%; flex: 1; padding: 15px; border: 2px solid #ddd; 
+    border-radius: 8px; font-size: 1.05em; font-family: inherit; resize: none; box-sizing: border-box;
+}
+textarea:focus { border-color: var(--secondary); outline: none; }
+h2, h3 { margin-top: 0; color: var(--primary); }
+
+/* --- BUTTONS --- */
+button { cursor: pointer; padding: 15px 25px; border: none; border-radius: 8px; font-weight: bold; font-size: 1.1em; transition: all 0.2s; }
+.btn-start { background: var(--secondary); color: white; margin-top: 30px; width: 100%; }
+.btn-primary { background: var(--primary); color: white; width: 100%; }
+.btn-success { background: var(--success); color: white; width: 100%; }
+.btn-danger { background: var(--error); color: white; margin-top: 10px; width: 100%;}
+button:hover { transform: translateY(-2px); filter: brightness(1.1); }
+
+/* --- NOTAUSGANG --- */
+.emergency-exit {
+    position: absolute; top: 20px; right: 20px;
+    background: rgba(231, 76, 60, 0.2); color: #fff;
+    padding: 8px 15px; border-radius: 20px; text-decoration: none;
+    font-size: 0.9em; border: 1px solid rgba(231, 76, 60, 0.5); cursor: pointer; z-index: 100;
+}
+.emergency-exit:hover { background: var(--error); }
+
+/* --- DASHBOARD ELEMENTE --- */
+#triage-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.scroll-box { max-height: 70vh; overflow-y: auto; padding-right: 10px; }
+
+.card { background: #fdfdfd; border-left: 6px solid var(--secondary); padding: 15px; margin-bottom: 15px; border-radius: 4px; display: flex; justify-content: space-between; border: 1px solid #edf2f7; }
+.spelling-row { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #eee; background: #f9f9f9; }
+.btn-reject { background: var(--error); color: white; padding: 5px 10px; font-size: 0.85em; border-radius: 4px; }
+
 .gi-group { display: flex; gap: 10px; margin-top: 10px; margin-bottom: 20px; }
-.gi-btn { background: #e0e0e0; color: #333; flex: 1; padding: 15px; font-size: 1.2em; border-radius: 4px; }
-.gi-btn.active { background: var(--secondary); color: white; box-shadow: inset 0 3px 5px rgba(0,0,0,0.2); }
+.gi-btn { background: #eee; flex: 1; padding: 15px; font-size: 1.2em; }
+.gi-btn.active { background: var(--secondary); color: white; }
+.formalities-list li { margin-bottom: 5px; list-style: none; }
 
-.formalities-list { margin-bottom: 15px; font-size: 0.95em; }
-.formalities-list li { margin-bottom: 5px; }
+/* --- LOOP BUTTONS (BELOHNUNG) --- */
+#loop-controls {
+    display: none; /* Erst nach Export sichtbar */
+    flex-direction: column;
+    gap: 10px; margin-top: 20px;
+}
