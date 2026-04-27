@@ -43,10 +43,48 @@ function copyPromptAndProceed() {
     const cp = document.getElementById('contentPoints').value;
     const text = document.getElementById('studentText').value;
 
-    if (!text || !cp) { alert("Bitte fülle alles aus!"); return; }
-    // Hinweis: Kopiert den strengen Master-Prompt.
-    const systemPrompt = `[MASTER PROMPT HIEREIN KOPIEREN]`;
-    navigator.clipboard.writeText("Bitte füge das JSON basierend auf dem System-Prompt ein.").then(() => navTo('screen-3'));
+    if (!text || !cp) { alert("Bitte fülle alle Textfelder aus!"); return; }
+
+    // DER EINGEBAUTE SYSTEM-PROMPT
+    const systemPrompt = `Du bist der KI-Tutor "Check Prompt Sherlock" (Level B1+).
+Analysiere den folgenden Text basierend auf diesen Prompts: [${cp}]
+
+Schülertext: """ ${text} """
+
+WICHTIG: Verändere den Originaltext NIEMALS. Nutze EXAKTE Zitate ("quote") für das Highlighting.
+Beachte das strenge Bewertungsraster für die Scores:
+- Content: max 7 (F/E/I/N basierend auf Topic Sentence + Supporting Points)
+- Coherence & Cohesion: max 7 (Nutzung von Linking Devices)
+- Grammar & Structures: max 7 (Fehler & Complex Structures)
+- Vocabulary & Spelling: max 7
+- General Impression: max 2 (Formalia)
+
+Erzeuge AUSSCHLIESSLICH dieses JSON-Format als Antwort (keinen Fließtext, nur JSON):
+{
+  "formalities": { "salutation_present": true, "closing_present": true, "paragraphs_correct": true },
+  "content_analysis": [
+    { "prompt": "Prompt Thema", "topic_sentence_quote": "Exaktes Zitat", "supporting_points": 3, "rating": "F" }
+  ],
+  "language_structures": {
+    "linking_devices": ["First of all", "Due to"],
+    "complex_structures": ["Relative clauses"]
+  },
+  "errors": [
+    { "type": "grammar", "quote": "to many", "correction": "too many", "explanation": "Grund" },
+    { "type": "vocab", "quote": "desaster", "correction": "disaster", "explanation": "Spelling" }
+  ],
+  "scores": {
+    "content": 7, "coherence": 7, "grammar": 6, "vocab": 5, "gi": 2,
+    "reasoning": { "content": "Kurz...", "coherence": "Kurz...", "grammar": "Kurz...", "vocab": "Kurz...", "gi": "Kurz..." }
+  }
+}`;
+
+    navigator.clipboard.writeText(systemPrompt).then(() => {
+        navTo('screen-3');
+    }).catch(() => {
+        alert("Kopieren fehlgeschlagen. Bitte erlaube den Zugriff auf die Zwischenablage.");
+        navTo('screen-3');
+    });
 }
 
 // --- DATENVERARBEITUNG & HIGHLIGHTING ---
@@ -54,7 +92,7 @@ function processData() {
     try {
         const input = document.getElementById('jsonInput').value;
         const extracted = input.match(/\{[\s\S]*\}/);
-        if (!extracted) throw new Error("Kein JSON.");
+        if (!extracted) throw new Error("Kein JSON gefunden.");
         rawData = JSON.parse(extracted[0]);
 
         buildMarkedText();
@@ -65,7 +103,7 @@ function processData() {
         goToStep(1);
         navTo('screen-4');
     } catch (e) {
-        alert("JSON Fehler. Bitte Output prüfen.");
+        alert("Fehler beim Auslesen des JSON. Bitte prüfe den Output der ByLKI.");
     }
 }
 
@@ -209,7 +247,7 @@ function generateRTF() {
     const linking = (rawData.language_structures && rawData.language_structures.linking_devices) ? rawData.language_structures.linking_devices.join(', ') : '';
     const complex = (rawData.language_structures && rawData.language_structures.complex_structures) ? rawData.language_structures.complex_structures.join(', ') : '';
     
-    // HTML-Engine bereitet den markierten Text für Word vor (Emojis sind bereits injiziert)
+    // HTML-Engine bereitet den markierten Text für Word vor
     let textForWord = document.getElementById('markedTextDisplay').innerHTML.replace(/<span class="[^"]*">/g, '').replace(/<\/span>/g, '').replace(/\n/g, '<br><br>');
 
     const html = `
@@ -270,19 +308,4 @@ function generateRTF() {
     const a = document.createElement('a'); a.href = url; a.download = `Scholz_Anton_Feedback.doc`;
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
 
-    document.getElementById('btn-export').style.display = 'none';
-    document.getElementById('loop-controls').style.display = 'flex';
-}
-
-function loopSameGenre() {
-    document.getElementById('studentText').value = "";
-    document.getElementById('jsonInput').value = "";
-    navTo('screen-2');
-}
-
-function loopNewGenre() {
-    document.getElementById('studentText').value = "";
-    document.getElementById('jsonInput').value = "";
-    document.getElementById('contentPoints').value = "";
-    navTo('screen-1');
-}
+    document.
