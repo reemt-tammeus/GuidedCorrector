@@ -3,41 +3,24 @@
     --secondary: #3498db; 
     --error: #e74c3c; 
     --success: #27ae60;
-    --highlight-yellow: rgba(241, 196, 15, 0.4);
-    --highlight-red: rgba(231, 76, 60, 0.4);
+    --hl-topic-color: rgba(52, 152, 219, 0.5); /* Blau für Topic */
+    --hl-link-color: rgba(39, 174, 96, 0.5);   /* Grün für Linking */
+    --hl-gram-color: rgba(231, 76, 60, 0.5);   /* Rot für Grammar */
+    --hl-voc-color: rgba(243, 156, 18, 0.5);   /* Orange für Vocab */
 }
 
-body, html { 
-    margin: 0; padding: 0; 
-    height: 100%; 
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-    overflow: hidden; 
-}
+body, html { margin: 0; padding: 0; height: 100%; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; overflow: hidden; }
 
 /* --- HINTERGRUND --- */
-#bg-layer {
-    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background-image: url('logo.jpg');
-    background-size: cover; background-position: center;
-    z-index: -2; transition: filter 0.5s ease;
-}
-#bg-overlay {
-    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0, 0, 0, 0); 
-    z-index: -1; transition: background 0.5s ease;
-}
+#bg-layer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-image: url('logo.jpg'); background-size: cover; background-position: center; z-index: -2; transition: filter 0.5s ease; }
+#bg-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0); z-index: -1; transition: background 0.5s ease; }
 body.work-mode #bg-overlay { background: rgba(0, 0, 0, 0.85); }
 
 /* --- SCREENS & GLASS BOX --- */
 .screen { display: none; width: 100%; height: 100%; flex-direction: column; align-items: center; padding: 20px; box-sizing: border-box; overflow-y: auto; }
 .screen.active { display: flex; }
 
-.glass-box {
-    width: 90%; max-width: 500px; padding: 40px; margin: auto;
-    background: rgba(0, 0, 0, 0.75); backdrop-filter: blur(15px);
-    border: 1.5px solid rgba(255, 255, 255, 0.2); border-radius: 28px;
-    text-align: center; color: #fff; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-}
+.glass-box { width: 90%; max-width: 500px; padding: 40px; margin: auto; background: rgba(0, 0, 0, 0.75); backdrop-filter: blur(15px); border: 1.5px solid rgba(255, 255, 255, 0.2); border-radius: 28px; text-align: center; color: #fff; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
 .glass-box h1 { margin-top: 0; letter-spacing: 2px; }
 .glass-box h2, .glass-box h3 { color: #ffffff; text-shadow: 0 2px 4px rgba(0,0,0,0.5); margin-top: 5px; }
 .glass-box h3 { font-weight: normal; opacity: 0.8; margin-bottom: 30px; }
@@ -48,21 +31,13 @@ body.work-mode #bg-overlay { background: rgba(0, 0, 0, 0.85); }
 
 /* --- PANELS & TEXTAREAS --- */
 .work-container { width: 100%; max-width: 1400px; display: flex; flex-direction: column; gap: 20px; height: 100%; }
-.panel {
-    background: rgba(0, 0, 0, 0.75); backdrop-filter: blur(15px);
-    border: 1.5px solid rgba(255, 255, 255, 0.2); border-radius: 16px;
-    padding: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); color: #fff;
-}
+.panel { background: rgba(0, 0, 0, 0.75); backdrop-filter: blur(15px); border: 1.5px solid rgba(255, 255, 255, 0.2); border-radius: 16px; padding: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); color: #fff; }
 .split-view { display: flex; gap: 20px; flex: 1; min-height: 400px;}
 .col-1-3 { flex: 1; display: flex; flex-direction: column; }
 .col-2-3 { flex: 2; display: flex; flex-direction: column; }
-
 .panel h2, .panel h3 { margin-top: 0; color: #ffffff; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
 
-textarea { 
-    width: 100%; flex: 1; padding: 15px; background: rgba(0, 0, 0, 0.6); color: white; 
-    border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 8px; font-size: 1.05em; font-family: inherit; resize: none; box-sizing: border-box;
-}
+textarea { width: 100%; flex: 1; padding: 15px; background: rgba(0, 0, 0, 0.6); color: white; border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 8px; font-size: 1.05em; font-family: inherit; resize: none; box-sizing: border-box; }
 textarea::placeholder { color: rgba(255, 255, 255, 0.5); }
 textarea:focus { border-color: var(--secondary); outline: none; background: rgba(0, 0, 0, 0.8); }
 
@@ -78,7 +53,7 @@ button:hover { transform: translateY(-2px); filter: brightness(1.2); border-colo
 
 .emergency-exit { position: absolute; top: 20px; right: 20px; background: rgba(231, 76, 60, 0.2); color: #fff; padding: 8px 15px; border-radius: 20px; font-size: 0.9em; border: 1px solid rgba(231, 76, 60, 0.5); z-index: 100; }
 
-/* --- THE WIZARD & SCOREBOARD --- */
+/* --- THE WIZARD --- */
 .wizard-step { display: none; flex-direction: column; flex: 1; }
 .wizard-step.active { display: flex; }
 .step-indicator { font-size: 0.8em; color: var(--secondary); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; font-weight: bold; }
@@ -87,37 +62,35 @@ button:hover { transform: translateY(-2px); filter: brightness(1.2); border-colo
 .card { background: rgba(255, 255, 255, 0.05); border-left: 5px solid var(--secondary); padding: 15px; margin-bottom: 12px; border-radius: 4px; display: flex; justify-content: space-between; border-top: 1px solid rgba(255, 255, 255, 0.1); border-right: 1px solid rgba(255, 255, 255, 0.1); border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
 .btn-reject { background: var(--error); color: white; padding: 5px 10px; font-size: 0.8em; border: none; }
 
-.score-input-group { margin-bottom: 15px; background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); }
-.score-input-group label { display: block; font-weight: bold; margin-bottom: 5px; color: #ccc; }
-.score-input-group input { width: 60px; padding: 8px; font-size: 1.2em; font-weight: bold; text-align: center; background: #fff; color: #000; border: none; border-radius: 4px; }
-.ai-reasoning { font-size: 0.85em; color: #aaa; margin-top: 8px; font-style: italic; border-left: 2px solid var(--secondary); padding-left: 10px; }
+.score-card { margin-top: 15px; margin-bottom: 15px; background: rgba(0,0,0,0.5); padding: 15px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); }
+.score-card input { width: 50px; padding: 8px; font-size: 1.2em; font-weight: bold; text-align: center; background: #fff; color: #000; border: none; border-radius: 4px; }
+.score-card textarea { width: 100%; padding: 10px; border-radius: 4px; font-size: 0.9em; margin-top: 10px; }
 
 #loop-controls { display: none; flex-direction: column; gap: 10px; margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.2); padding-top: 20px;}
 
-/* --- MARKED TEXT & HIGHLIGHT LOGIC --- */
-.marked-text-area { 
-    flex: 1; background: rgba(0,0,0,0.4); padding: 20px; border-radius: 8px; 
-    border: 1px solid rgba(255,255,255,0.1); overflow-y: auto; font-size: 1.1em; line-height: 1.8; white-space: pre-wrap; 
-}
+/* --- MARKED TEXT HIGHLIGHTS --- */
+.marked-text-area { flex: 1; background: rgba(0,0,0,0.4); padding: 20px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); overflow-y: auto; font-size: 1.1em; line-height: 1.8; white-space: pre-wrap; }
 
-/* Base Styles für Markierungen (immer mit Transition für weiches Einblenden) */
-.hl-topic { color: var(--secondary); font-weight: bold; font-size: 0.8em; vertical-align: super; margin-right: 2px; transition: opacity 0.3s; }
-.hl-link { background: transparent; transition: background 0.3s; border-radius: 3px; padding: 0 2px;}
-.hl-error { background: transparent; transition: background 0.3s; border-radius: 3px; padding: 0 2px;}
+/* Alle Highlights sind standardmäßig unsichtbar */
+.hl-topic, .hl-link, .hl-grammar, .hl-vocab { background: transparent; transition: background 0.3s; border-radius: 3px; padding: 0 2px; }
+.sym { font-weight: bold; font-family: sans-serif; opacity: 0; transition: opacity 0.3s; } /* Emojis/Symbole */
 
-/* DYNAMISCHE STEUERUNG ÜBER PARENT-KLASSEN DES WIZARDS */
+/* STEP 1: Content */
+.step-1-view .hl-topic { background: var(--hl-topic-color); }
+.step-1-view .hl-topic .sym { opacity: 1; color: #fff;}
 
-/* STEP 1: Zeige Inhalt & Linking Devices, VERSTECKE Fehler */
-.step-1-view .hl-topic { opacity: 1; }
-.step-1-view .hl-link { background: var(--highlight-yellow); }
-.step-1-view .hl-error { background: transparent; }
+/* STEP 2: Coherence */
+.step-2-view .hl-link { background: var(--hl-link-color); }
+.step-2-view .hl-link .sym { opacity: 1; color: #fff;}
 
-/* STEP 2: Zeige Fehler, VERSTECKE Inhalt */
-.step-2-view .hl-topic { opacity: 0; }
-.step-2-view .hl-link { background: transparent; }
-.step-2-view .hl-error { background: var(--highlight-red); }
+/* STEP 3: Grammar */
+.step-3-view .hl-grammar { background: var(--hl-gram-color); }
+.step-3-view .hl-grammar .sym { opacity: 1; color: #fff; }
 
-/* STEP 3: Zeige ALLES (Finale Übersicht) */
-.step-3-view .hl-topic { opacity: 1; }
-.step-3-view .hl-link { background: var(--highlight-yellow); }
-.step-3-view .hl-error { background: var(--highlight-red); }
+/* STEP 4: Vocab */
+.step-4-view .hl-vocab { background: var(--hl-voc-color); }
+.step-4-view .hl-vocab .sym { opacity: 1; color: #fff; }
+
+/* STEP 5: Overview (Alle an) */
+.step-5-view .hl-topic, .step-5-view .hl-link, .step-5-view .hl-grammar, .step-5-view .hl-vocab { background: rgba(255,255,255,0.1); }
+.step-5-view .sym { opacity: 1; color: #ccc; }
