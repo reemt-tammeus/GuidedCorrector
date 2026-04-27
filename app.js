@@ -60,14 +60,14 @@ Analysiere den folgenden Text basierend auf diesen Prompts: [${cp}]
 Schülertext: """ ${text} """
 
 WICHTIG: Verändere den Originaltext NIEMALS. Nutze EXAKTE Zitate aus dem Schülertext für das JSON.
-Bei "content_analysis": Zitiere den Topic Sentence. Zitiere danach ALLE Supporting Points exakt als Array von Strings. Wenn der TS fehlt, lass das ts_quote leer und liefere nur die SPs.
-Bei "complex_structures_quotes": Zitiere die genauen Passagen, in denen komplexe Strukturen vorkommen (auch fehlerhafte!).
+Bei "content_analysis": Zitiere den Topic Sentence (ts_quote). Zitiere danach ALLE Supporting Points exakt als Array von Strings (sp_quotes).
+Bei "complex_structures_quotes": Zitiere die genauen Passagen, in denen komplexe Strukturen vorkommen.
 
 Erzeuge AUSSCHLIESSLICH dieses JSON-Format als Antwort:
 {
   "formalities": { "salutation_present": true, "closing_present": true, "paragraphs_correct": true },
   "content_analysis": [
-    { "prompt": "Thema 1", "ts_quote": "Exact Topic Sentence", "sp_quotes": ["Exact SP 1", "Exact SP 2"], "rating": "F" }
+    { "prompt": "Thema 1", "ts_quote": "Exaktes Zitat Topic Sentence", "sp_quotes": ["Exaktes Zitat SP 1", "Exaktes Zitat SP 2"], "rating": "F" }
   ],
   "language_structures": {
     "linking_devices": ["First of all", "Due to"],
@@ -86,7 +86,7 @@ Erzeuge AUSSCHLIESSLICH dieses JSON-Format als Antwort:
     navigator.clipboard.writeText(systemPrompt).then(() => {
         navTo('screen-3');
     }).catch(() => {
-        alert("Kopieren fehlgeschlagen. Bitte erlaube den Zugriff auf die Zwischenablage.");
+        alert("Kopieren fehlgeschlagen. Bitte erlaube den Zugriff.");
         navTo('screen-3');
     });
 }
@@ -111,27 +111,29 @@ function processData() {
     }
 }
 
-function escapeRegExp(string) {
-    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+// Diese Funktion macht die Suche kugelsicher gegen falsche Leerzeichen/Zeilenumbrüche der KI
+function makeFlexibleRegex(str) {
+    if (!str) return "";
+    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '\\s+');
 }
 
 function buildMarkedText() {
     let text = document.getElementById('studentText').value;
 
-    // 1. Complex Structures (Grün unterstrichen - Größte Blöcke zuerst umklammern)
+    // 1. Complex Structures (Grün unterstrichen)
     if(rawData.language_structures && rawData.language_structures.complex_structures_quotes) {
         rawData.language_structures.complex_structures_quotes.forEach(quote => {
-            if(quote) {
-                let safeQuote = escapeRegExp(quote);
+            if(quote && quote.trim() !== "") {
+                let safeQuote = makeFlexibleRegex(quote.trim());
                 text = text.replace(new RegExp(safeQuote, 'g'), `<span class="hl-complex" data-export="border-bottom: 2px solid #2ecc71;">$&</span>`);
             }
         });
     }
 
-    // 2. Linking Devices (Grün)
+    // 2. Linking Devices (Grün hinterlegt)
     if(rawData.language_structures && rawData.language_structures.linking_devices) {
         rawData.language_structures.linking_devices.forEach(link => {
-            let safeLink = escapeRegExp(link);
+            let safeLink = makeFlexibleRegex(link.trim());
             text = text.replace(new RegExp(`\\b${safeLink}\\b`, 'g'), `<span class="hl-link" data-export="background-color: #a9dfbf; padding: 2px;">$&</span>`);
         });
     }
@@ -139,33 +141,32 @@ function buildMarkedText() {
     // 3. Errors (Rot/Orange)
     if(rawData.errors) {
         rawData.errors.forEach(err => {
-            if(err && err.quote) {
+            if(err && err.quote && err.quote.trim() !== "") {
                 let isGram = err.type === 'grammar';
                 let cssClass = isGram ? 'hl-grammar' : 'hl-vocab';
                 let expStyle = isGram ? 'background-color: #f5b7b1; padding: 2px;' : 'background-color: #fdebd0; padding: 2px;';
                 
-                // Wir suchen den exakten Fehler und wickeln ihn ein. 
-                // Falls er in einem Span liegt, belassen wir das HTML intakt.
-                let safeQuote = escapeRegExp(err.quote);
+                let safeQuote = makeFlexibleRegex(err.quote.trim());
                 text = text.replace(new RegExp(safeQuote, 'g'), `<span class="${cssClass}" data-export="${expStyle}">$&</span>`);
             }
         });
     }
 
-    // 4. Content Analysis: Zahlen anhängen
+    // 4. Content Analysis: Echte <sup> Tags für sicheren Word-Export
     if(rawData.content_analysis) {
         rawData.content_analysis.forEach(ca => {
-            // Topic Sentence = 0
-            if(ca.ts_quote && ca.ts_quote.trim() !== "") {
-                let safeTS = escapeRegExp(ca.ts_quote);
-                text = text.replace(new RegExp(safeTS, 'g'), `$&<span class="hl-topic" data-export="color: #3498db; font-size: 0.8em; vertical-align: super;">0</span>`);
+            // Topic Sentence = 0 (Check auf neue oder alte JSON-Struktur)
+            let ts = ca.ts_quote || ca.topic_sentence_quote;
+            if(ts && ts.trim() !== "") {
+                let safeTS = makeFlexibleRegex(ts.trim());
+                text = text.replace(new RegExp(safeTS, 'g'), `$&<sup class="hl-topic" data-export="color: #3498db; font-weight: bold;">0</sup>`);
             }
             // Supporting Points = 1, 2, 3...
             if(ca.sp_quotes && ca.sp_quotes.length > 0) {
                 ca.sp_quotes.forEach((sp, i) => {
                     if(sp && sp.trim() !== "") {
-                        let safeSP = escapeRegExp(sp);
-                        text = text.replace(new RegExp(safeSP, 'g'), `$&<span class="hl-topic" data-export="color: #3498db; font-size: 0.8em; vertical-align: super;">${i+1}</span>`);
+                        let safeSP = makeFlexibleRegex(sp.trim());
+                        text = text.replace(new RegExp(safeSP, 'g'), `$&<sup class="hl-topic" data-export="color: #3498db; font-weight: bold;">${i+1}</sup>`);
                     }
                 });
             }
@@ -240,7 +241,7 @@ function deleteError(i) {
     buildMarkedText(); 
 }
 
-// --- EXPORT (Das bunte Word Dokument) ---
+// --- EXPORT (Word Dokument) ---
 function generateRTF() {
     const sC = parseInt(document.getElementById('score-content').value) || 0;
     const sCoh = parseInt(document.getElementById('score-coherence').value) || 0;
@@ -259,7 +260,7 @@ function generateRTF() {
     if(rawData.content_analysis) {
         rawData.content_analysis.forEach(ca => {
             let spCount = ca.sp_quotes ? ca.sp_quotes.length : 0;
-            let tsFound = (ca.ts_quote && ca.ts_quote.trim() !== "") ? "Yes" : "No";
+            let tsFound = (ca.ts_quote || ca.topic_sentence_quote) ? "Yes" : "No";
             cRows += `<tr><td>${ca.prompt}</td><td>${tsFound}</td><td>${spCount}</td><td><b>${ca.rating}</b></td></tr>`;
         });
     }
@@ -279,7 +280,7 @@ function generateRTF() {
     // Bereite Text für Word vor: Wandle die data-export Styles in echte Inline-Styles um
     let textHTML = document.getElementById('markedTextDisplay').innerHTML;
     textHTML = textHTML.replace(/\n/g, '<br><br>');
-    // Regex sucht nach SPANs mit unseren Klassen und ersetzt class="..." durch style="..."
+    // Die Regex ersetzt die HTML Klassen durch echte CSS Befehle für MS Word
     textHTML = textHTML.replace(/class="hl-[^"]*"\s+data-export="([^"]*)"/g, 'style="$1"');
 
     const html = `
