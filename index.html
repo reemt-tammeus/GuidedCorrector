@@ -65,7 +65,7 @@
             <h2 style="color: var(--success);">Prompt kopiert!</h2>
             <p>Füge den Prompt in die ByLKI ein und kopiere das JSON-Ergebnis hierher.</p>
             <textarea id="jsonInput" rows="10" placeholder="Füge hier das KI-Ergebnis ein..." style="margin-top: 20px; margin-bottom: 20px;"></textarea>
-            <button class="btn-success" onclick="processData()">Daten auswerten & Wizard starten</button>
+            <button class="btn-success" onclick="processData()">Daten auswerten & Korrektur starten</button>
         </div>
     </div>
 </div>
@@ -77,68 +77,104 @@
         <div class="split-view">
             <div class="col-2-3 panel" style="display: flex; flex-direction: column;">
                 <h2>Marked Student Text</h2>
-                <div id="markedTextDisplay" class="marked-text-area step-1-view">
-                    </div>
-                <div id="viewStatus" style="margin-top: 15px; font-size: 0.9em; color: #aaa; text-align: right;">
-                    👁️ Ansicht: Content & Coherence
-                </div>
+                <div id="markedTextDisplay" class="marked-text-area step-1-view"></div>
+                <div id="viewStatus" style="margin-top: 15px; font-size: 0.9em; color: #aaa; text-align: right;"></div>
             </div>
 
             <div class="col-1-3 panel scroll-box" style="position: relative;">
                 
                 <div id="wizard-step-1" class="wizard-step active">
-                    <div class="step-indicator">Schritt 1 von 3</div>
-                    <h3>Content & Coherence</h3>
-                    <p style="font-size: 0.9em; color: #ccc;">Prüfe die Topic Sentences und Linking Devices links im Text.</p>
-                    <div id="contentMatrix"></div>
-                    <button class="btn-primary" style="margin-top: 20px;" onclick="goToStep(2)">Weiter zu Sprache & Fehlern ➡️</button>
+                    <div class="step-indicator">Rubrik 1 / 5</div>
+                    <h3>Content</h3>
+                    <div id="contentMatrix" style="margin-bottom: 15px;"></div>
+                    
+                    <div class="score-card">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                            <b>Content Score (max 7)</b>
+                            <input type="number" id="score-content" max="7" min="0">
+                        </div>
+                        <textarea id="reason-content" placeholder="Observation / Comment..." rows="2"></textarea>
+                    </div>
+                    <button class="btn-primary" onclick="goToStep(2)">Weiter zu Coherence ➡️</button>
                 </div>
 
                 <div id="wizard-step-2" class="wizard-step">
-                    <div class="step-indicator">Schritt 2 von 3</div>
-                    <h3>Language & Errors</h3>
-                    <p style="font-size: 0.9em; color: #ccc;">Prüfe die roten Markierungen im Text. Lösche unpassende KI-Kritik.</p>
-                    <div id="errorCardsArea"></div>
-                    
-                    <div style="display: flex; gap: 10px; margin-top: 20px;">
-                        <button class="btn-secondary" style="flex: 1;" onclick="goToStep(1)">⬅️ Zurück</button>
-                        <button class="btn-primary" style="flex: 2;" onclick="goToStep(3)">Weiter zum Scoreboard ➡️</button>
+                    <div class="step-indicator">Rubrik 2 / 5</div>
+                    <h3>Coherence & Cohesion</h3>
+                    <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                        <b>Linking Devices:</b> <span id="linkingList" style="color: var(--secondary)"></span>
+                    </div>
+
+                    <div class="score-card">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                            <b>Coherence Score (max 7)</b>
+                            <input type="number" id="score-coherence" max="7" min="0">
+                        </div>
+                        <textarea id="reason-coherence" placeholder="Observation / Comment..." rows="2"></textarea>
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="btn-secondary" style="flex: 1;" onclick="goToStep(1)">⬅️</button>
+                        <button class="btn-primary" style="flex: 3;" onclick="goToStep(3)">Weiter zu Grammar ➡️</button>
                     </div>
                 </div>
 
                 <div id="wizard-step-3" class="wizard-step">
-                    <div class="step-indicator">Schritt 3 von 3</div>
-                    <h3>The Scoreboard</h3>
-                    <p style="font-size: 0.9em; color: #ccc;">Passe die Noten an. Der Text links zeigt nun die finale Übersicht.</p>
-                    
-                    <div class="score-input-group">
-                        <label>Content (max 10)</label>
-                        <input type="number" id="score-content" max="10" min="0">
-                    </div>
-                    <div class="score-input-group">
-                        <label>Coherence & Cohesion (max 7)</label>
-                        <input type="number" id="score-coherence" max="7" min="0">
-                    </div>
-                    <div class="score-input-group">
-                        <label>Grammar & Structures (max 7)</label>
-                        <input type="number" id="score-grammar" max="7" min="0">
-                        <div class="ai-reasoning" id="reason-grammar"></div>
-                    </div>
-                    <div class="score-input-group">
-                        <label>Vocabulary & Spelling (max 7)</label>
-                        <input type="number" id="score-vocab" max="7" min="0">
-                        <div class="ai-reasoning" id="reason-vocab"></div>
-                    </div>
-                    <div class="score-input-group">
-                        <label>General Impression (max 2)</label>
-                        <input type="number" id="score-gi" max="2" min="0">
+                    <div class="step-indicator">Rubrik 3 / 5</div>
+                    <h3>Grammar & Structures</h3>
+                    <div id="grammarCardsArea" style="margin-bottom: 15px;"></div>
+                    <div style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; margin-bottom: 15px; font-size: 0.9em;">
+                        <b>Complex Structures:</b> <span id="complexList" style="color: var(--secondary)"></span>
                     </div>
 
-                    <div style="display: flex; gap: 10px; margin-top: 25px;">
-                        <button class="btn-secondary" style="flex: 1;" onclick="goToStep(2)">⬅️ Zurück</button>
-                        <button id="btn-export" class="btn-success" style="flex: 2;" onclick="generateRTF()">💾 RTF Exportieren</button>
+                    <div class="score-card">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                            <b>Grammar Score (max 7)</b>
+                            <input type="number" id="score-grammar" max="7" min="0">
+                        </div>
+                        <textarea id="reason-grammar" placeholder="Observation / Comment..." rows="2"></textarea>
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="btn-secondary" style="flex: 1;" onclick="goToStep(2)">⬅️</button>
+                        <button class="btn-primary" style="flex: 3;" onclick="goToStep(4)">Weiter zu Vocabulary ➡️</button>
+                    </div>
+                </div>
+
+                <div id="wizard-step-4" class="wizard-step">
+                    <div class="step-indicator">Rubrik 4 / 5</div>
+                    <h3>Vocabulary & Spelling</h3>
+                    <div id="vocabCardsArea" style="margin-bottom: 15px;"></div>
+
+                    <div class="score-card">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                            <b>Vocab Score (max 7)</b>
+                            <input type="number" id="score-vocab" max="7" min="0">
+                        </div>
+                        <textarea id="reason-vocab" placeholder="Observation / Comment..." rows="2"></textarea>
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="btn-secondary" style="flex: 1;" onclick="goToStep(3)">⬅️</button>
+                        <button class="btn-primary" style="flex: 3;" onclick="goToStep(5)">Weiter zu Gen. Impression ➡️</button>
+                    </div>
+                </div>
+
+                <div id="wizard-step-5" class="wizard-step">
+                    <div class="step-indicator">Rubrik 5 / 5</div>
+                    <h3>General Impression</h3>
+                    <ul id="formalChecklist" style="margin-bottom: 15px; font-size: 0.9em; color: #ccc;"></ul>
+
+                    <div class="score-card">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                            <b>Impression Score (max 2)</b>
+                            <input type="number" id="score-gi" max="2" min="0">
+                        </div>
+                        <textarea id="reason-gi" placeholder="Observation / Comment..." rows="2"></textarea>
                     </div>
                     
+                    <div style="display: flex; gap: 10px; margin-top: 20px;">
+                        <button class="btn-secondary" style="flex: 1;" onclick="goToStep(4)">⬅️</button>
+                        <button id="btn-export" class="btn-success" style="flex: 3;" onclick="generateRTF()">💾 PDF/RTF Exportieren</button>
+                    </div>
+
                     <div id="loop-controls">
                         <button class="btn-primary" onclick="loopSameGenre()">🔄 Gleiches Genre, neuer Schüler</button>
                         <button class="btn-danger" onclick="loopNewGenre()">🏠 Zurück zum Start</button>
