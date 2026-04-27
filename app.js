@@ -47,14 +47,27 @@ function goToStep(step) {
     statusDiv.innerText = statusText[step-1];
 }
 
-// --- PROMPT BRÜCKE ---
+// --- PROMPT BRÜCKE (MIT DYNAMISCHER GENRE-WEICHE) ---
 function copyPromptAndProceed() {
     const cp = document.getElementById('contentPoints').value;
     const text = document.getElementById('studentText').value;
 
+    const textType = document.getElementById('textType').value;
+    const subType = document.getElementById('subType').value;
+
     if (!text || !cp) { 
         alert("Bitte fülle alle Textfelder aus!"); 
         return; 
+    }
+
+    // Die Magie: Der Prompt wird je nach Auswahl auf Screen 1 angepasst!
+    let genreInstruction = "";
+    if (textType === 'letter') {
+        if (subType === 'complaint') {
+            genreInstruction = "\nACHTUNG: Es handelt sich um eine Beschwerde. Prüfe zwingend, ob am Ende eine klare Forderung (Demand for action, refund, replacement) gestellt wird. Setze das Feld 'genre_requirement_met' auf true, wenn ja, sonst false.";
+        } else if (subType === 'application') {
+            genreInstruction = "\nACHTUNG: Es handelt sich um eine Bewerbung. Prüfe zwingend, ob am Ende ein Angebot für ein Vorstellungsgespräch oder Rückfragen (Offer for interview/contact) gemacht wird. Setze das Feld 'genre_requirement_met' auf true, wenn ja, sonst false.";
+        }
     }
 
     const systemPrompt = `Du bist der KI-Tutor "GuidedCorrector" (Level B1+).
@@ -63,13 +76,13 @@ Analysiere den folgenden Text basierend auf diesen Prompts: [${cp}]
 Schülertext: """ ${text} """
 
 WICHTIGSTE REGELN FÜR DAS JSON:
-1. ZITATE: Du darfst den Originaltext NIEMALS verändern. Wenn du Sätze als 'ts_quote' oder 'sp_quotes' zitierst, MUSST du sie exakt so übernehmen, wie sie dort stehen. Korrigiere KEINE Tipp- oder Grammatikfehler im Zitat.
-2. RATING: Das "rating" in der content_analysis MUSS zwingend einer dieser vier Buchstaben sein: "F" (Fully), "E" (Essentially), "I" (Incompletely) oder "N" (Not at all). Andere Noten wie A, B oder C sind streng verboten.
-3. INHALT: Zitiere für jeden Prompt den Topic Sentence (ts_quote) und ALLE weiteren inhaltlich relevanten Sätze als Array (sp_quotes).
+1. ZITATE: Du darfst den Originaltext NIEMALS verändern. Korrigiere KEINE Tipp- oder Grammatikfehler im Zitat.
+2. RATING: Das "rating" in der content_analysis MUSS zwingend einer dieser vier Buchstaben sein: "F" (Fully), "E" (Essentially), "I" (Incompletely) oder "N" (Not at all). 
+3. INHALT: Zitiere für jeden Prompt den Topic Sentence (ts_quote) und ALLE weiteren inhaltlich relevanten Sätze als Array (sp_quotes).${genreInstruction}
 
 Erzeuge AUSSCHLIESSLICH dieses JSON-Format als Antwort:
 {
-  "formalities": { "salutation_present": true, "closing_present": true, "paragraphs_correct": true },
+  "formalities": { "salutation_present": true, "closing_present": true, "paragraphs_correct": true, "genre_requirement_met": true },
   "content_analysis": [
     { "prompt": "Thema 1", "ts_quote": "Exaktes Zitat TS inkl. Fehlern", "sp_quotes": ["Exaktes Zitat SP 1", "Exaktes Zitat SP 2"], "rating": "F" }
   ],
@@ -126,18 +139,13 @@ function makeFlexibleRegex(str) {
 function buildMarkedText() {
     let text = document.getElementById('studentText').value;
 
-    // REIHENFOLGE GEÄNDERT:
-    // 1. Content Analysis (Ganze Sätze) MUSS zuerst passieren, damit die Sätze noch nicht von Fehlern zerrissen sind!
     if(rawData.content_analysis) {
         rawData.content_analysis.forEach(ca => {
-            // Topic Sentence = 0
             let ts = ca.ts_quote || ca.topic_sentence_quote;
             if(ts && ts.trim() !== "") {
                 let safeTS = makeFlexibleRegex(ts.trim());
-                // 'gi' für Case-Insensitive, falls die KI Groß-/Kleinschreibung verhaut
                 text = text.replace(new RegExp(safeTS, 'gi'), `$&<sup class="hl-topic" data-export="color: #3498db; font-weight: bold;">0</sup>`);
             }
-            // Supporting Points = 1, 2, 3...
             if(ca.sp_quotes && ca.sp_quotes.length > 0) {
                 ca.sp_quotes.forEach((sp, i) => {
                     if(sp && sp.trim() !== "") {
@@ -149,7 +157,6 @@ function buildMarkedText() {
         });
     }
 
-    // 2. Complex Structures (Lange Phrasen)
     if(rawData.language_structures && rawData.language_structures.complex_structures_quotes) {
         rawData.language_structures.complex_structures_quotes.forEach(quote => {
             if(quote && quote.trim() !== "") {
@@ -159,7 +166,6 @@ function buildMarkedText() {
         });
     }
 
-    // 3. Linking Devices (Kurze Phrasen)
     if(rawData.language_structures && rawData.language_structures.linking_devices) {
         rawData.language_structures.linking_devices.forEach(link => {
             let safeLink = makeFlexibleRegex(link.trim());
@@ -167,7 +173,6 @@ function buildMarkedText() {
         });
     }
 
-    // 4. Errors (Einzelne Wörter)
     if(rawData.errors) {
         rawData.errors.forEach(err => {
             if(err && err.quote && err.quote.trim() !== "") {
@@ -218,28 +223,61 @@ function buildWizardPanels() {
     document.getElementById('grammarCardsArea').innerHTML = gramHtml || '<p style="color:var(--success)">Keine Grammatikfehler gefunden.</p>';
     document.getElementById('vocabCardsArea').innerHTML = vocHtml || '<p style="color:var(--success)">Keine Vokabel/Spelling-Fehler gefunden.</p>';
 
+    // --- FORMALITIES & NEUE GENRE LOGIK ---
     let fHtml = "";
     if(rawData.formalities) {
         fHtml += `<li>Salutation: ${rawData.formalities.salutation_present ? '✅' : '❌'}</li>`;
         fHtml += `<li>Closing: ${rawData.formalities.closing_present ? '✅' : '❌'}</li>`;
         fHtml += `<li>Paragraphing: ${rawData.formalities.paragraphs_correct ? '✅' : '❌'}</li>`;
+        
+        // Füge den 4. Punkt hinzu, wenn es eine Beschwerde oder Bewerbung ist
+        const textType = document.getElementById('textType').value;
+        const subType = document.getElementById('subType').value;
+        
+        if (textType === 'letter' && (subType === 'complaint' || subType === 'application')) {
+            let reqName = subType === 'complaint' ? 'Demand for action' : 'Offer for interview';
+            let reqMet = rawData.formalities.genre_requirement_met;
+            let icon = reqMet ? '✅' : '❌';
+            fHtml += `<li>Genre Requirement (${reqName}): ${icon}</li>`;
+        }
     }
     document.getElementById('formalChecklist').innerHTML = fHtml;
 
+    // --- SCOREBOARD & PUNKTE-SPERRE ---
     if(rawData.scores) {
         document.getElementById('score-content').value = Math.min(rawData.scores.content || 0, 7);
         document.getElementById('score-coherence').value = Math.min(rawData.scores.coherence || 0, 7);
         document.getElementById('score-grammar').value = Math.min(rawData.scores.grammar || 0, 7);
         document.getElementById('score-vocab').value = Math.min(rawData.scores.vocab || 0, 7);
-        document.getElementById('score-gi').value = Math.min(rawData.scores.gi || 0, 2);
         
+        // Logik für General Impression (Max 2, oder Max 1 wenn Forderung fehlt)
+        let maxGi = 2;
+        let giReasoning = rawData.scores.reasoning ? rawData.scores.reasoning.gi : '';
+        
+        const textType = document.getElementById('textType').value;
+        const subType = document.getElementById('subType').value;
+        
+        if (textType === 'letter' && (subType === 'complaint' || subType === 'application')) {
+            if (rawData.formalities && rawData.formalities.genre_requirement_met === false) {
+                maxGi = 1; // Der Wächter deckelt die Punktzahl!
+                giReasoning = "⚠️ Max 1 Punkt (Forderung/Interview-Angebot fehlt!). " + giReasoning;
+            }
+        }
+        
+        document.getElementById('maxGiDisplay').innerText = maxGi;
+        let givenGi = Math.min(rawData.scores.gi || 0, maxGi);
+        let giInput = document.getElementById('score-gi');
+        giInput.max = maxGi;
+        giInput.value = givenGi;
+        
+        // Texte für Reasoning eintragen
         if(rawData.scores.reasoning) {
             document.getElementById('reason-content').value = rawData.scores.reasoning.content || '';
             document.getElementById('reason-coherence').value = rawData.scores.reasoning.coherence || '';
             document.getElementById('reason-grammar').value = rawData.scores.reasoning.grammar || '';
             document.getElementById('reason-vocab').value = rawData.scores.reasoning.vocab || '';
-            document.getElementById('reason-gi').value = rawData.scores.reasoning.gi || '';
         }
+        document.getElementById('reason-gi').value = giReasoning;
     }
 }
 
