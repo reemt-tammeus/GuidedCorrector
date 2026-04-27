@@ -28,12 +28,14 @@
             <option value="creative">Creative Text</option>
         </select>
         
-        <label id="subTypeLabel">Subgenre</label>
-        <select id="subType">
-            <option value="personal">Personal Letter</option>
-            <option value="application">Letter of Application</option>
-            <option value="complaint">Letter of Complaint</option>
-        </select>
+        <div id="subTypeWrapper">
+            <label>Subgenre</label>
+            <select id="subType">
+                <option value="personal">Personal Letter</option>
+                <option value="application">Letter of Application</option>
+                <option value="complaint">Letter of Complaint</option>
+            </select>
+        </div>
 
         <button class="btn-start" onclick="navTo('screen-2')">Texteingabe starten</button>
         <div class="branding-note">created by Mr. T. & Master E.</div>
@@ -86,10 +88,11 @@
                 <div id="wizard-step-1" class="wizard-step active">
                     <div class="step-indicator">Rubrik 1 / 5</div>
                     <h3>Content</h3>
+                    <p class="hint-text">Blaue Zahlen im Text: 0 = Topic Sentence, 1+ = Supporting Points.</p>
                     <div id="contentMatrix" style="margin-bottom: 15px;"></div>
                     
                     <div class="score-card">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <div class="score-row">
                             <b>Content Score (max 7)</b>
                             <input type="number" id="score-content" max="7" min="0">
                         </div>
@@ -101,12 +104,13 @@
                 <div id="wizard-step-2" class="wizard-step">
                     <div class="step-indicator">Rubrik 2 / 5</div>
                     <h3>Coherence & Cohesion</h3>
-                    <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                    <p class="hint-text">Linking Devices leuchten grün.</p>
+                    <div class="info-box">
                         <b>Linking Devices:</b> <span id="linkingList" style="color: var(--secondary)"></span>
                     </div>
 
                     <div class="score-card">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <div class="score-row">
                             <b>Coherence Score (max 7)</b>
                             <input type="number" id="score-coherence" max="7" min="0">
                         </div>
@@ -121,13 +125,18 @@
                 <div id="wizard-step-3" class="wizard-step">
                     <div class="step-indicator">Rubrik 3 / 5</div>
                     <h3>Grammar & Structures</h3>
+                    <p class="hint-text">Grammatik rot. Komplexe Strukturen grün unterstrichen.</p>
                     <div id="grammarCardsArea" style="margin-bottom: 15px;"></div>
-                    <div style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; margin-bottom: 15px; font-size: 0.9em;">
+                    
+                    <div class="info-box">
                         <b>Complex Structures:</b> <span id="complexList" style="color: var(--secondary)"></span>
+                        <div style="margin-top: 10px; font-size: 0.85em; border-top: 1px solid rgba(255,255,255,0.2); padding-top: 5px; color: #f1c40f;">
+                            ⚠️ <b>Masterprompt-Regel:</b> Bereits der Versuch, komplexe Strukturen zu nutzen (auch wenn fehlerhaft), rechtfertigt 5 Punkte in dieser Rubrik.
+                        </div>
                     </div>
 
                     <div class="score-card">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <div class="score-row">
                             <b>Grammar Score (max 7)</b>
                             <input type="number" id="score-grammar" max="7" min="0">
                         </div>
@@ -142,10 +151,11 @@
                 <div id="wizard-step-4" class="wizard-step">
                     <div class="step-indicator">Rubrik 4 / 5</div>
                     <h3>Vocabulary & Spelling</h3>
+                    <p class="hint-text">Wortschatz- und Tippfehler leuchten orange.</p>
                     <div id="vocabCardsArea" style="margin-bottom: 15px;"></div>
 
                     <div class="score-card">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <div class="score-row">
                             <b>Vocab Score (max 7)</b>
                             <input type="number" id="score-vocab" max="7" min="0">
                         </div>
@@ -163,7 +173,7 @@
                     <ul id="formalChecklist" style="margin-bottom: 15px; font-size: 0.9em; color: #ccc;"></ul>
 
                     <div class="score-card">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <div class="score-row">
                             <b>Impression Score (max 2)</b>
                             <input type="number" id="score-gi" max="2" min="0">
                         </div>
@@ -172,7 +182,7 @@
                     
                     <div style="display: flex; gap: 10px; margin-top: 20px;">
                         <button class="btn-secondary" style="flex: 1;" onclick="goToStep(4)">⬅️</button>
-                        <button id="btn-export" class="btn-success" style="flex: 3;" onclick="generateRTF()">💾 PDF/RTF Exportieren</button>
+                        <button id="btn-export" class="btn-success" style="flex: 3;" onclick="generateRTF()">💾 Buntes Word/RTF Exportieren</button>
                     </div>
 
                     <div id="loop-controls">
