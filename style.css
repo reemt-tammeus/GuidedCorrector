@@ -3,10 +3,11 @@
     --secondary: #3498db; 
     --error: #e74c3c; 
     --success: #27ae60;
-    --hl-topic-color: rgba(52, 152, 219, 0.5); /* Blau für Topic */
-    --hl-link-color: rgba(39, 174, 96, 0.5);   /* Grün für Linking */
+    --hl-topic-color: #3498db;                 /* Sanftes Blau für Zahlen */
+    --hl-link-color: rgba(39, 174, 96, 0.4);   /* Grün für Linking */
     --hl-gram-color: rgba(231, 76, 60, 0.5);   /* Rot für Grammar */
-    --hl-voc-color: rgba(243, 156, 18, 0.5);   /* Orange für Vocab */
+    --hl-voc-color: rgba(230, 126, 34, 0.5);   /* Orange für Vocab */
+    --hl-complex-border: 2px solid #2ecc71;    /* Grüne Linie für Complex */
 }
 
 body, html { margin: 0; padding: 0; height: 100%; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; overflow: hidden; }
@@ -14,7 +15,9 @@ body, html { margin: 0; padding: 0; height: 100%; font-family: 'Segoe UI', Tahom
 /* --- HINTERGRUND --- */
 #bg-layer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-image: url('logo.jpg'); background-size: cover; background-position: center; z-index: -2; transition: filter 0.5s ease; }
 #bg-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0); z-index: -1; transition: background 0.5s ease; }
-body.work-mode #bg-overlay { background: rgba(0, 0, 0, 0.85); }
+
+/* Reduzierte Abdunkelung (0.6 statt 0.85) für den Arbeitsmodus */
+body.work-mode #bg-overlay { background: rgba(0, 0, 0, 0.6); }
 
 /* --- SCREENS & GLASS BOX --- */
 .screen { display: none; width: 100%; height: 100%; flex-direction: column; align-items: center; padding: 20px; box-sizing: border-box; overflow-y: auto; }
@@ -41,7 +44,7 @@ textarea { width: 100%; flex: 1; padding: 15px; background: rgba(0, 0, 0, 0.6); 
 textarea::placeholder { color: rgba(255, 255, 255, 0.5); }
 textarea:focus { border-color: var(--secondary); outline: none; background: rgba(0, 0, 0, 0.8); }
 
-/* --- BUTTONS --- */
+/* --- BUTTONS & UI --- */
 button { cursor: pointer; padding: 15px 25px; border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 8px; font-weight: bold; font-size: 1em; transition: all 0.15s; outline: none; }
 button:active { transform: scale(0.98); box-shadow: 0 0 0 3px currentColor; }
 .btn-start { background: rgba(0, 0, 0, 0.6); color: var(--success); margin-top: 30px; width: 100%; }
@@ -52,6 +55,8 @@ button:active { transform: scale(0.98); box-shadow: 0 0 0 3px currentColor; }
 button:hover { transform: translateY(-2px); filter: brightness(1.2); border-color: rgba(255, 255, 255, 0.6); }
 
 .emergency-exit { position: absolute; top: 20px; right: 20px; background: rgba(231, 76, 60, 0.2); color: #fff; padding: 8px 15px; border-radius: 20px; font-size: 0.9em; border: 1px solid rgba(231, 76, 60, 0.5); z-index: 100; }
+.hint-text { font-size: 0.85em; color: #ccc; margin-top: -10px; margin-bottom: 15px; font-style: italic; }
+.info-box { background: rgba(255,255,255,0.05); padding: 15px; border-radius: 8px; margin-bottom: 15px; }
 
 /* --- THE WIZARD --- */
 .wizard-step { display: none; flex-direction: column; flex: 1; }
@@ -63,34 +68,36 @@ button:hover { transform: translateY(-2px); filter: brightness(1.2); border-colo
 .btn-reject { background: var(--error); color: white; padding: 5px 10px; font-size: 0.8em; border: none; }
 
 .score-card { margin-top: 15px; margin-bottom: 15px; background: rgba(0,0,0,0.5); padding: 15px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); }
+.score-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
 .score-card input { width: 50px; padding: 8px; font-size: 1.2em; font-weight: bold; text-align: center; background: #fff; color: #000; border: none; border-radius: 4px; }
-.score-card textarea { width: 100%; padding: 10px; border-radius: 4px; font-size: 0.9em; margin-top: 10px; }
+.score-card textarea { width: 100%; padding: 10px; border-radius: 4px; font-size: 0.9em; margin-top: 10px; background: rgba(255,255,255,0.9); color: #000; border: none;}
 
 #loop-controls { display: none; flex-direction: column; gap: 10px; margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.2); padding-top: 20px;}
 
 /* --- MARKED TEXT HIGHLIGHTS --- */
 .marked-text-area { flex: 1; background: rgba(0,0,0,0.4); padding: 20px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); overflow-y: auto; font-size: 1.1em; line-height: 1.8; white-space: pre-wrap; }
 
-/* Alle Highlights sind standardmäßig unsichtbar */
-.hl-topic, .hl-link, .hl-grammar, .hl-vocab { background: transparent; transition: background 0.3s; border-radius: 3px; padding: 0 2px; }
-.sym { font-weight: bold; font-family: sans-serif; opacity: 0; transition: opacity 0.3s; } /* Emojis/Symbole */
+/* Versteckter Standard-Zustand */
+.hl-topic { opacity: 0; font-weight: bold; font-size: 0.85em; vertical-align: super; margin-left: 2px; transition: opacity 0.3s; }
+.hl-link, .hl-grammar, .hl-vocab { background: transparent; border-bottom: transparent; transition: all 0.3s; border-radius: 3px; padding: 0 2px; }
+.hl-complex { border-bottom: 2px solid transparent; transition: all 0.3s; }
 
-/* STEP 1: Content */
-.step-1-view .hl-topic { background: var(--hl-topic-color); }
-.step-1-view .hl-topic .sym { opacity: 1; color: #fff;}
+/* STEP 1: Content (Zahlen in Blau zeigen) */
+.step-1-view .hl-topic { opacity: 1; color: var(--hl-topic-color); }
 
-/* STEP 2: Coherence */
+/* STEP 2: Coherence (Linking Devices Grün) */
 .step-2-view .hl-link { background: var(--hl-link-color); }
-.step-2-view .hl-link .sym { opacity: 1; color: #fff;}
 
-/* STEP 3: Grammar */
+/* STEP 3: Grammar (Fehler Rot, Complex Grün unterstrichen) */
 .step-3-view .hl-grammar { background: var(--hl-gram-color); }
-.step-3-view .hl-grammar .sym { opacity: 1; color: #fff; }
+.step-3-view .hl-complex { border-bottom: var(--hl-complex-border); }
 
-/* STEP 4: Vocab */
+/* STEP 4: Vocab (Fehler Orange) */
 .step-4-view .hl-vocab { background: var(--hl-voc-color); }
-.step-4-view .hl-vocab .sym { opacity: 1; color: #fff; }
 
-/* STEP 5: Overview (Alle an) */
-.step-5-view .hl-topic, .step-5-view .hl-link, .step-5-view .hl-grammar, .step-5-view .hl-vocab { background: rgba(255,255,255,0.1); }
-.step-5-view .sym { opacity: 1; color: #ccc; }
+/* STEP 5: Overview (Alles an) */
+.step-5-view .hl-topic { opacity: 1; color: var(--hl-topic-color); }
+.step-5-view .hl-link { background: var(--hl-link-color); }
+.step-5-view .hl-grammar { background: var(--hl-gram-color); }
+.step-5-view .hl-vocab { background: var(--hl-voc-color); }
+.step-5-view .hl-complex { border-bottom: var(--hl-complex-border); }
