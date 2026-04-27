@@ -57,10 +57,7 @@ function copyPromptAndProceed() {
         return; 
     }
 
-    if (text.trim().startsWith('{') && text.trim().endsWith('}')) {
-        alert("⚠️ Halt! Du hast das KI-JSON in das Feld für den Schülertext eingefügt.\n\nBitte füge hier auf Screen 2 den ECHTEN, englischen Text des Schülers ein.");
-        return;
-    }
+    // Der blockierende Sicherheits-Check wurde hier restlos entfernt!
 
     // MASSIV VERSCHÄRFTER SYSTEM PROMPT FÜR DIE KI
     const systemPrompt = `Du bist der KI-Tutor "GuidedCorrector" (Level B1+).
@@ -96,7 +93,7 @@ Erzeuge AUSSCHLIESSLICH dieses JSON-Format als Antwort:
     navigator.clipboard.writeText(systemPrompt).then(() => {
         navTo('screen-3');
     }).catch(() => {
-        alert("Kopieren fehlgeschlagen. Bitte erlaube den Zugriff.");
+        alert("Kopieren fehlgeschlagen. Bitte erlaube den Zugriff auf die Zwischenablage.");
         navTo('screen-3');
     });
 }
@@ -124,13 +121,9 @@ function processData() {
 // Diese Funktion macht die Suche extrem fehlerresistent
 function makeFlexibleRegex(str) {
     if (!str) return "";
-    // Entfernt Satzzeichen am Ende des KI-Zitats, falls die KI sie weglässt
     str = str.replace(/[.,!?]+$/, "");
-    // Regex Escaping für Sonderzeichen
     let escaped = str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    // Flexible Leerzeichen
     escaped = escaped.replace(/\s+/g, '\\s+');
-    // Erlaubt Satzzeichen am Ende des gefundenen Textes
     return escaped + "[.,!?]*";
 }
 
