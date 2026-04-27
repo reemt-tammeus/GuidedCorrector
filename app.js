@@ -17,7 +17,7 @@ function emergencyExit() {
 }
 
 function updateSubtypes() {
-    // Bleibt wie gehabt für die Dropdowns
+    // Falls später dynamisch Dropdowns angepasst werden sollen
 }
 
 // --- WIZARD STEUERUNG ---
@@ -46,28 +46,33 @@ function copyPromptAndProceed() {
 
     if (!text || !cp) { alert("Bitte fülle alles aus!"); return; }
 
-    const systemPrompt = `Erstelle ein JSON für diesen Schülertext basierend auf folgenden Prompts: [${cp}]
+    const systemPrompt = `Analysiere den Text basierend auf folgenden Prompts: [${cp}]
 Schülertext: """ ${text} """
 
 WICHTIG: Verändere den Originaltext NIEMALS. Nutze EXAKTE Zitate ("quote") für das Highlighting.
-
-STRUKTUR DES JSON:
+Erzeuge AUSSCHLIESSLICH dieses JSON-Format:
 {
+  "formalities": { "salutation_present": true, "closing_present": true, "paragraphs_correct": true },
   "content_analysis": [
-    { "prompt": "chaos", "topic_sentence_quote": "Exaktes kurzes Zitat des 1. Satzes", "rating": "E" }
+    { "prompt": "Prompt 1", "topic_sentence_quote": "Exaktes Zitat", "supporting_points": 3, "rating": "F" }
   ],
-  "linking_devices": ["Due to", "Furthermore"],
+  "language_structures": {
+    "linking_devices": ["First of all", "Due to"],
+    "complex_structures": ["Relative clauses"]
+  },
   "errors": [
-    { "type": "grammar", "quote": "to many", "correction": "too many", "explanation": "Grammatik-Regel" },
-    { "type": "spelling", "quote": "aound", "correction": "sound", "explanation": null }
+    { "type": "grammar", "quote": "to many", "correction": "too many", "explanation": "Grund" }
   ],
   "scores": {
     "content": 7, "coherence": 7, "grammar": 6, "vocab": 5, "gi": 2,
-    "reasoning": { "grammar": "Begründung für 6 Punkte", "vocab": "Begründung für 5 Punkte" }
+    "reasoning": { "grammar": "Kurze Begründung", "vocab": "Kurze Begründung" }
   }
 }`;
 
-    navigator.clipboard.writeText(systemPrompt).then(() => navTo('screen-3'));
+    navigator.clipboard.writeText(systemPrompt).then(() => navTo('screen-3')).catch(() => {
+        alert("Kopieren fehlgeschlagen. Bitte manuell kopieren.");
+        navTo('screen-3');
+    });
 }
 
 // --- DATENVERARBEITUNG & HIGHLIGHTING ---
@@ -95,9 +100,11 @@ function buildMarkedText() {
     let text = document.getElementById('studentText').value;
 
     // 1. Markiere Linking Devices (Gelb)
-    if(rawData.linking_devices) {
-        rawData.linking_devices.forEach(link => {
-            text = text.replace(new RegExp(`\\b${link}\\b`, 'gi'), `<span class="hl-link">$&</span>`);
+    if(rawData.language_structures && rawData.language_structures.linking_devices) {
+        rawData.language_structures.linking_devices.forEach(link => {
+            // Einfaches Escape für Regex, um Fehler bei Sonderzeichen zu vermeiden
+            let safeLink = link.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            text = text.replace(new RegExp(`\\b${safeLink}\\b`, 'gi'), `<span class="hl-link">$&</span>`);
         });
     }
 
@@ -105,7 +112,7 @@ function buildMarkedText() {
     if(rawData.errors) {
         rawData.errors.forEach(err => {
             if(err && err.quote) {
-                text = text.replace(err.quote, `<span class="hl-error" data-correction="${err.correction}">${err.quote}</span>`);
+                text = text.replace(err.quote, `<span class="hl-error" title="${err.correction}">${err.quote}</span>`);
             }
         });
     }
@@ -125,54 +132,68 @@ function buildMarkedText() {
 function buildWizardPanels() {
     // Schritt 1: Content Matrix
     let cHtml = "<table>";
-    rawData.content_analysis.forEach(ca => {
-        cHtml += `<tr><td style="padding: 10px; border-bottom: 1px solid #444;"><b>${ca.prompt}</b><br><span style="color:var(--secondary)">Rating: ${ca.rating}</span></td></tr>`;
-    });
+    if(rawData.content_analysis) {
+        rawData.content_analysis.forEach(ca => {
+            cHtml += `<tr><td style="padding: 10px; border-bottom: 1px solid #444;">
+                <b>${ca.prompt}</b><br>
+                <span style="color:var(--secondary)">Rating: ${ca.rating} (${ca.supporting_points || 0} SP)</span>
+            </td></tr>`;
+        });
+    }
     cHtml += "</table>";
     document.getElementById('contentMatrix').innerHTML = cHtml;
 
     // Schritt 2: Errors
     let eHtml = "";
-    rawData.errors.forEach((err, i) => {
-        if(!err) return;
-        eHtml += `
-            <div class="card" id="err-${i}">
-                <div>
-                    <div><s>${err.quote}</s> &rarr; <b style="color:var(--success)">${err.correction}</b></div>
-                    <div style="font-size:0.8em; color:#aaa">${err.explanation || 'Rechtschreibung/Tippfehler'}</div>
-                </div>
-                <button class="btn-reject" onclick="deleteError(${i})">X</button>
-            </div>`;
-    });
+    if(rawData.errors) {
+        rawData.errors.forEach((err, i) => {
+            if(!err) return;
+            eHtml += `
+                <div class="card" id="err-${i}">
+                    <div>
+                        <div><s>${err.quote}</s> &rarr; <b style="color:var(--success)">${err.correction}</b></div>
+                        <div style="font-size:0.8em; color:#aaa">${err.explanation || 'Rechtschreibung/Tippfehler'}</div>
+                    </div>
+                    <button class="btn-reject" onclick="deleteError(${i})">X</button>
+                </div>`;
+        });
+    }
     document.getElementById('errorCardsArea').innerHTML = eHtml;
 
     // Schritt 3: Scoreboard füllen
-    document.getElementById('score-content').value = rawData.scores.content;
-    document.getElementById('score-coherence').value = rawData.scores.coherence;
-    document.getElementById('score-grammar').value = rawData.scores.grammar;
-    document.getElementById('score-vocab').value = rawData.scores.vocab;
-    document.getElementById('score-gi').value = rawData.scores.gi;
-    
-    document.getElementById('reason-grammar').innerText = rawData.scores.reasoning.grammar || '';
-    document.getElementById('reason-vocab').innerText = rawData.scores.reasoning.vocab || '';
+    if(rawData.scores) {
+        document.getElementById('score-content').value = rawData.scores.content || 0;
+        document.getElementById('score-coherence').value = rawData.scores.coherence || 0;
+        document.getElementById('score-grammar').value = rawData.scores.grammar || 0;
+        document.getElementById('score-vocab').value = rawData.scores.vocab || 0;
+        document.getElementById('score-gi').value = rawData.scores.gi || 0;
+        
+        if(rawData.scores.reasoning) {
+            document.getElementById('reason-grammar').innerText = rawData.scores.reasoning.grammar || '';
+            document.getElementById('reason-vocab').innerText = rawData.scores.reasoning.vocab || '';
+        }
+    }
 }
 
 function deleteError(i) {
-    // Löscht die Karte. Im echten System müsste hier der "Marked Text" neu gerendert werden,
-    // um die rote Markierung zu entfernen. Für den Wizard-Flow lassen wir das Kärtchen einfach verschwinden.
     rawData.errors[i] = null;
     document.getElementById(`err-${i}`).remove();
+    // Um die Markierung im Text sofort zu entfernen, bauen wir den Text neu auf
+    buildMarkedText();
 }
 
 // --- EXPORT & LOOPS ---
 function generateRTF() {
     // Holt die finalen Noten aus dem Scoreboard (Schritt 3)
-    const sC = document.getElementById('score-content').value;
-    const sG = document.getElementById('score-grammar').value;
-    const sV = document.getElementById('score-vocab').value;
-    const sCoh = document.getElementById('score-coherence').value;
-    const sGi = document.getElementById('score-gi').value;
-    const total = parseInt(sC) + parseInt(sG) + parseInt(sV) + parseInt(sCoh) + parseInt(sGi);
+    const sC = parseInt(document.getElementById('score-content').value) || 0;
+    const sG = parseInt(document.getElementById('score-grammar').value) || 0;
+    const sV = parseInt(document.getElementById('score-vocab').value) || 0;
+    const sCoh = parseInt(document.getElementById('score-coherence').value) || 0;
+    const sGi = parseInt(document.getElementById('score-gi').value) || 0;
+    const total = sC + sG + sV + sCoh + sGi;
+
+    const rG = document.getElementById('reason-grammar').innerText;
+    const rV = document.getElementById('reason-vocab').innerText;
 
     const html = `
     <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
@@ -190,12 +211,12 @@ function generateRTF() {
             <tr><th>Category</th><th>Score</th></tr>
             <tr><td>Content</td><td>${sC} / 10</td></tr>
             <tr><td>Coherence & Cohesion</td><td>${sCoh} / 7</td></tr>
-            <tr><td>Grammar & Structures</td><td>${sG} / 7<br><small><i>${document.getElementById('reason-grammar').innerText}</i></small></td></tr>
-            <tr><td>Vocabulary & Spelling</td><td>${sV} / 7<br><small><i>${document.getElementById('reason-vocab').innerText}</i></small></td></tr>
+            <tr><td>Grammar & Structures</td><td>${sG} / 7<br><small><i>${rG}</i></small></td></tr>
+            <tr><td>Vocabulary & Spelling</td><td>${sV} / 7<br><small><i>${rV}</i></small></td></tr>
             <tr><td>General Impression</td><td>${sGi} / 2</td></tr>
             <tr style="background:#f2f2f2"><td><b>TOTAL</b></td><td><b>${total} / 33</b></td></tr>
         </table>
-        <p><i>Note: The marked text and error lists have been omitted in this preview version, but the logic is ready.</i></p>
+        <p><i>Note: The marked text and detailed error lists have been omitted in this preview version, but the scoring is based on the interactive analysis.</i></p>
     </body></html>`;
 
     const blob = new Blob(['\ufeff', html], { type: 'application/msword' });
@@ -213,6 +234,7 @@ function loopSameGenre() {
     document.getElementById('jsonInput').value = "";
     navTo('screen-2');
 }
+
 function loopNewGenre() {
     document.getElementById('studentText').value = "";
     document.getElementById('jsonInput').value = "";
