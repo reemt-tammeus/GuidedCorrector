@@ -60,7 +60,6 @@ function copyPromptAndProceed() {
         return; 
     }
 
-    // Die Magie: Der Prompt wird je nach Auswahl auf Screen 1 angepasst!
     let genreInstruction = "";
     if (textType === 'letter') {
         if (subType === 'complaint') {
@@ -79,6 +78,7 @@ WICHTIGSTE REGELN FÜR DAS JSON:
 1. ZITATE: Du darfst den Originaltext NIEMALS verändern. Korrigiere KEINE Tipp- oder Grammatikfehler im Zitat.
 2. RATING: Das "rating" in der content_analysis MUSS zwingend einer dieser vier Buchstaben sein: "F" (Fully), "E" (Essentially), "I" (Incompletely) oder "N" (Not at all). 
 3. INHALT: Zitiere für jeden Prompt den Topic Sentence (ts_quote) und ALLE weiteren inhaltlich relevanten Sätze als Array (sp_quotes).${genreInstruction}
+4. SCORES: Halte dich strikt an diese Maximalwerte: content (max 7), coherence (max 7), grammar (max 7), vocab (max 7), gi (max 2). Vergib niemals höhere Zahlen!
 
 Erzeuge AUSSCHLIESSLICH dieses JSON-Format als Antwort:
 {
@@ -111,9 +111,14 @@ Erzeuge AUSSCHLIESSLICH dieses JSON-Format als Antwort:
 // --- DATENVERARBEITUNG & HIGHLIGHTING ---
 function processData() {
     try {
-        const input = document.getElementById('jsonInput').value;
+        let input = document.getElementById('jsonInput').value;
+        
+        // DER STAUBSAUGER: Ersetzt alle Non-Breaking Spaces und andere fiese Formatierungs-Zeichen durch saubere Leerzeichen!
+        input = input.replace(/[\u00A0\u200B\u200C\u200D\uFEFF]/g, ' '); 
+
         const extracted = input.match(/\{[\s\S]*\}/);
         if (!extracted) throw new Error("Kein JSON gefunden.");
+        
         rawData = JSON.parse(extracted[0]);
 
         buildMarkedText();
@@ -124,7 +129,7 @@ function processData() {
         goToStep(1);
         navTo('screen-4');
     } catch (e) {
-        alert("Fehler beim Auslesen des JSON. Bitte prüfe den Output der KI.");
+        alert("Fehler beim Auslesen des JSON. Bitte prüfe den Output der KI.\n\nTechnischer Grund: " + e.message);
     }
 }
 
@@ -259,7 +264,7 @@ function buildWizardPanels() {
         
         if (textType === 'letter' && (subType === 'complaint' || subType === 'application')) {
             if (rawData.formalities && rawData.formalities.genre_requirement_met === false) {
-                maxGi = 1; // Der Wächter deckelt die Punktzahl!
+                maxGi = 1; 
                 giReasoning = "⚠️ Max 1 Punkt (Forderung/Interview-Angebot fehlt!). " + giReasoning;
             }
         }
@@ -270,7 +275,6 @@ function buildWizardPanels() {
         giInput.max = maxGi;
         giInput.value = givenGi;
         
-        // Texte für Reasoning eintragen
         if(rawData.scores.reasoning) {
             document.getElementById('reason-content').value = rawData.scores.reasoning.content || '';
             document.getElementById('reason-coherence').value = rawData.scores.reasoning.coherence || '';
