@@ -19,16 +19,11 @@ function emergencyExit() {
 // --- DROPDOWN LOGIK ---
 function updateSubtypes() {
     const textType = document.getElementById('textType').value;
-    const subLabel = document.getElementById('subTypeLabel');
-    const subSelect = document.getElementById('subType');
-    
-    // Versteckt das Subgenre, wenn Creative Text gewählt ist
+    const subWrapper = document.getElementById('subTypeWrapper');
     if (textType === 'creative') {
-        subLabel.style.display = 'none';
-        subSelect.style.display = 'none';
+        subWrapper.style.display = 'none';
     } else {
-        subLabel.style.display = 'block';
-        subSelect.style.display = 'block';
+        subWrapper.style.display = 'block';
     }
 }
 
@@ -43,11 +38,11 @@ function goToStep(step) {
 
     const statusDiv = document.getElementById('viewStatus');
     const statusText = [
-        "👁️ Ansicht 1: Content (F/E/I/N)",
-        "👁️ Ansicht 2: Coherence (Linking Devices)",
-        "👁️ Ansicht 3: Grammar (Grammatikfehler)",
-        "👁️ Ansicht 4: Vocabulary (Wortschatz & Spelling)",
-        "👁️ Ansicht 5: Finale Gesamtübersicht"
+        "👁️ Ansicht 1: Content (Blaue Zahlen für 0=TS, 1,2..=SP)",
+        "👁️ Ansicht 2: Coherence (Grün hinterlegte Linking Devices)",
+        "👁️ Ansicht 3: Grammar (Fehler = Rot, Complex = Grün unterstrichen)",
+        "👁️ Ansicht 4: Vocabulary (Fehler = Orange)",
+        "👁️ Ansicht 5: Finale Gesamtübersicht (Alle Farben aktiv)"
     ];
     statusDiv.innerText = statusText[step-1];
 }
@@ -64,23 +59,19 @@ Analysiere den folgenden Text basierend auf diesen Prompts: [${cp}]
 
 Schülertext: """ ${text} """
 
-WICHTIG: Verändere den Originaltext NIEMALS. Nutze EXAKTE Zitate ("quote") für das Highlighting.
-Beachte das strenge Bewertungsraster für die Scores:
-- Content: max 7 (F/E/I/N basierend auf Topic Sentence + Supporting Points)
-- Coherence & Cohesion: max 7 (Nutzung von Linking Devices)
-- Grammar & Structures: max 7 (Fehler & Complex Structures)
-- Vocabulary & Spelling: max 7
-- General Impression: max 2 (Formalia)
+WICHTIG: Verändere den Originaltext NIEMALS. Nutze EXAKTE Zitate aus dem Schülertext für das JSON.
+Bei "content_analysis": Zitiere den Topic Sentence. Zitiere danach ALLE Supporting Points exakt als Array von Strings. Wenn der TS fehlt, lass das ts_quote leer und liefere nur die SPs.
+Bei "complex_structures_quotes": Zitiere die genauen Passagen, in denen komplexe Strukturen vorkommen (auch fehlerhafte!).
 
-Erzeuge AUSSCHLIESSLICH dieses JSON-Format als Antwort (keinen Fließtext, nur JSON):
+Erzeuge AUSSCHLIESSLICH dieses JSON-Format als Antwort:
 {
   "formalities": { "salutation_present": true, "closing_present": true, "paragraphs_correct": true },
   "content_analysis": [
-    { "prompt": "Prompt Thema", "topic_sentence_quote": "Exaktes Zitat", "supporting_points": 3, "rating": "F" }
+    { "prompt": "Thema 1", "ts_quote": "Exact Topic Sentence", "sp_quotes": ["Exact SP 1", "Exact SP 2"], "rating": "F" }
   ],
   "language_structures": {
     "linking_devices": ["First of all", "Due to"],
-    "complex_structures": ["Relative clauses"]
+    "complex_structures_quotes": ["which I visited", "how such a chaos can be created"]
   },
   "errors": [
     { "type": "grammar", "quote": "to many", "correction": "too many", "explanation": "Grund" },
@@ -120,30 +111,63 @@ function processData() {
     }
 }
 
+function escapeRegExp(string) {
+    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 function buildMarkedText() {
     let text = document.getElementById('studentText').value;
 
-    if(rawData.language_structures && rawData.language_structures.linking_devices) {
-        rawData.language_structures.linking_devices.forEach(link => {
-            let safeLink = link.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-            text = text.replace(new RegExp(`\\b${safeLink}\\b`, 'g'), `<span class="hl-link"><span class="sym">☑ </span>$&</span>`);
-        });
-    }
-
-    if(rawData.errors) {
-        rawData.errors.forEach(err => {
-            if(err && err.quote) {
-                let cssClass = err.type === 'grammar' ? 'hl-grammar' : 'hl-vocab';
-                text = text.replace(err.quote, `<span class="${cssClass}"><span class="sym">☐ </span><s>${err.quote}</s></span>`);
+    // 1. Complex Structures (Grün unterstrichen - Größte Blöcke zuerst umklammern)
+    if(rawData.language_structures && rawData.language_structures.complex_structures_quotes) {
+        rawData.language_structures.complex_structures_quotes.forEach(quote => {
+            if(quote) {
+                let safeQuote = escapeRegExp(quote);
+                text = text.replace(new RegExp(safeQuote, 'g'), `<span class="hl-complex" data-export="border-bottom: 2px solid #2ecc71;">$&</span>`);
             }
         });
     }
 
+    // 2. Linking Devices (Grün)
+    if(rawData.language_structures && rawData.language_structures.linking_devices) {
+        rawData.language_structures.linking_devices.forEach(link => {
+            let safeLink = escapeRegExp(link);
+            text = text.replace(new RegExp(`\\b${safeLink}\\b`, 'g'), `<span class="hl-link" data-export="background-color: #a9dfbf; padding: 2px;">$&</span>`);
+        });
+    }
+
+    // 3. Errors (Rot/Orange)
+    if(rawData.errors) {
+        rawData.errors.forEach(err => {
+            if(err && err.quote) {
+                let isGram = err.type === 'grammar';
+                let cssClass = isGram ? 'hl-grammar' : 'hl-vocab';
+                let expStyle = isGram ? 'background-color: #f5b7b1; padding: 2px;' : 'background-color: #fdebd0; padding: 2px;';
+                
+                // Wir suchen den exakten Fehler und wickeln ihn ein. 
+                // Falls er in einem Span liegt, belassen wir das HTML intakt.
+                let safeQuote = escapeRegExp(err.quote);
+                text = text.replace(new RegExp(safeQuote, 'g'), `<span class="${cssClass}" data-export="${expStyle}">$&</span>`);
+            }
+        });
+    }
+
+    // 4. Content Analysis: Zahlen anhängen
     if(rawData.content_analysis) {
-        rawData.content_analysis.forEach((ca, index) => {
-            if(ca.topic_sentence_quote) {
-                let sup = ["¹", "²", "³", "⁴", "⁵"][index] || `[${index+1}]`;
-                text = text.replace(ca.topic_sentence_quote, `<span class="hl-topic"><span class="sym">${sup} </span>$&</span>`);
+        rawData.content_analysis.forEach(ca => {
+            // Topic Sentence = 0
+            if(ca.ts_quote && ca.ts_quote.trim() !== "") {
+                let safeTS = escapeRegExp(ca.ts_quote);
+                text = text.replace(new RegExp(safeTS, 'g'), `$&<span class="hl-topic" data-export="color: #3498db; font-size: 0.8em; vertical-align: super;">0</span>`);
+            }
+            // Supporting Points = 1, 2, 3...
+            if(ca.sp_quotes && ca.sp_quotes.length > 0) {
+                ca.sp_quotes.forEach((sp, i) => {
+                    if(sp && sp.trim() !== "") {
+                        let safeSP = escapeRegExp(sp);
+                        text = text.replace(new RegExp(safeSP, 'g'), `$&<span class="hl-topic" data-export="color: #3498db; font-size: 0.8em; vertical-align: super;">${i+1}</span>`);
+                    }
+                });
             }
         });
     }
@@ -152,10 +176,10 @@ function buildMarkedText() {
 }
 
 function buildWizardPanels() {
-    let cHtml = "<table style='width:100%; font-size:0.9em; text-align:left;'><tr><th>Prompt</th><th>Topic Sentence</th><th>SP</th><th>Rating</th></tr>";
+    let cHtml = "<table style='width:100%; font-size:0.9em; text-align:left;'><tr><th>Prompt</th><th>Rating</th></tr>";
     if(rawData.content_analysis) {
         rawData.content_analysis.forEach(ca => {
-            cHtml += `<tr><td style='border-bottom:1px solid #444; padding:5px;'>${ca.prompt}</td><td style='border-bottom:1px solid #444; padding:5px;'><i>${ca.topic_sentence_quote}</i></td><td style='border-bottom:1px solid #444; padding:5px;'>${ca.supporting_points||0}</td><td style='border-bottom:1px solid #444; padding:5px; color:var(--secondary); font-weight:bold;'>${ca.rating}</td></tr>`;
+            cHtml += `<tr><td style='border-bottom:1px solid #444; padding:5px;'>${ca.prompt}</td><td style='border-bottom:1px solid #444; padding:5px; color:var(--secondary); font-weight:bold;'>${ca.rating}</td></tr>`;
         });
     }
     cHtml += "</table>";
@@ -163,7 +187,7 @@ function buildWizardPanels() {
 
     if(rawData.language_structures) {
         document.getElementById('linkingList').innerText = (rawData.language_structures.linking_devices || []).join(', ');
-        document.getElementById('complexList').innerText = (rawData.language_structures.complex_structures || []).join(', ');
+        document.getElementById('complexList').innerText = (rawData.language_structures.complex_structures_quotes || []).join(', ');
     }
 
     let gramHtml = "", vocHtml = "";
@@ -176,14 +200,14 @@ function buildWizardPanels() {
                         <div><s>${err.quote}</s> &rarr; <b style="color:var(--success)">${err.correction}</b></div>
                         <div style="font-size:0.8em; color:#aaa">${err.explanation || 'Rechtschreibung'}</div>
                     </div>
-                    <button class="btn-reject" onclick="deleteError(${i})">X</button>
+                    <button class="btn-reject" onclick="deleteError(${i})">Löschen</button>
                 </div>`;
             if(err.type === 'grammar') gramHtml += card;
             else vocHtml += card;
         });
     }
-    document.getElementById('grammarCardsArea').innerHTML = gramHtml || '<p style="color:var(--success)">Keine Grammatikfehler.</p>';
-    document.getElementById('vocabCardsArea').innerHTML = vocHtml || '<p style="color:var(--success)">Keine Vokabel/Spelling-Fehler.</p>';
+    document.getElementById('grammarCardsArea').innerHTML = gramHtml || '<p style="color:var(--success)">Keine Grammatikfehler gefunden.</p>';
+    document.getElementById('vocabCardsArea').innerHTML = vocHtml || '<p style="color:var(--success)">Keine Vokabel/Spelling-Fehler gefunden.</p>';
 
     let fHtml = "";
     if(rawData.formalities) {
@@ -216,6 +240,7 @@ function deleteError(i) {
     buildMarkedText(); 
 }
 
+// --- EXPORT (Das bunte Word Dokument) ---
 function generateRTF() {
     const sC = parseInt(document.getElementById('score-content').value) || 0;
     const sCoh = parseInt(document.getElementById('score-coherence').value) || 0;
@@ -233,7 +258,9 @@ function generateRTF() {
     let cRows = "";
     if(rawData.content_analysis) {
         rawData.content_analysis.forEach(ca => {
-            cRows += `<tr><td>${ca.prompt}</td><td><i>${ca.topic_sentence_quote}</i></td><td>${ca.supporting_points||0}</td><td><b>${ca.rating}</b></td></tr>`;
+            let spCount = ca.sp_quotes ? ca.sp_quotes.length : 0;
+            let tsFound = (ca.ts_quote && ca.ts_quote.trim() !== "") ? "Yes" : "No";
+            cRows += `<tr><td>${ca.prompt}</td><td>${tsFound}</td><td>${spCount}</td><td><b>${ca.rating}</b></td></tr>`;
         });
     }
 
@@ -248,22 +275,37 @@ function generateRTF() {
     }
 
     const linking = (rawData.language_structures && rawData.language_structures.linking_devices) ? rawData.language_structures.linking_devices.join(', ') : '';
-    const complex = (rawData.language_structures && rawData.language_structures.complex_structures) ? rawData.language_structures.complex_structures.join(', ') : '';
     
-    let textForWord = document.getElementById('markedTextDisplay').innerHTML.replace(/<span class="[^"]*">/g, '').replace(/<\/span>/g, '').replace(/\n/g, '<br><br>');
+    // Bereite Text für Word vor: Wandle die data-export Styles in echte Inline-Styles um
+    let textHTML = document.getElementById('markedTextDisplay').innerHTML;
+    textHTML = textHTML.replace(/\n/g, '<br><br>');
+    // Regex sucht nach SPANs mit unseren Klassen und ersetzt class="..." durch style="..."
+    textHTML = textHTML.replace(/class="hl-[^"]*"\s+data-export="([^"]*)"/g, 'style="$1"');
 
     const html = `
     <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
     <head><meta charset="utf-8"><style>
-        body { font-family: Arial, sans-serif; font-size: 11pt; }
+        body { font-family: Arial, sans-serif; font-size: 11pt; line-height: 1.5; }
         h1, h2, h3 { color: #000; }
         table { width: 100%; border-collapse: collapse; margin-bottom: 20px;}
         th, td { border: 1px solid black; padding: 6px; text-align: left; vertical-align: top; }
         th { background: #f2f2f2; }
+        .legend { font-size: 9pt; border: 1px solid #ccc; padding: 10px; margin-bottom: 20px; background: #fafafa; }
     </style></head>
     <body>
         <h1>PART A - Marked Learner Text</h1>
-        <p>${textForWord}</p>
+        
+        <div class="legend">
+            <b>Legend:</b> 
+            <span style="color: #3498db; font-weight: bold;">0</span> = Topic Sentence | 
+            <span style="color: #3498db; font-weight: bold;">1, 2, 3</span> = Supporting Points | 
+            <span style="background-color: #a9dfbf;">Green Background</span> = Linking Devices | 
+            <span style="border-bottom: 2px solid #2ecc71;">Green Underline</span> = Complex Structures | 
+            <span style="background-color: #f5b7b1;">Red Background</span> = Grammar Errors | 
+            <span style="background-color: #fdebd0;">Orange Background</span> = Vocab/Spelling Errors
+        </div>
+
+        <p>${textHTML}</p>
         <br>
         
         <h1>PART B - Detailed Analysis</h1>
@@ -280,7 +322,6 @@ function generateRTF() {
             <tr><th width="30%">Incorrect Form</th><th width="30%">Correction</th><th width="40%">Explanation</th></tr>
             ${gRows || '<tr><td colspan="3">No mistakes</td></tr>'}
         </table>
-        <p><b>Complex Structures Used:</b> ${complex}</p>
 
         <h3>3) VOCABULARY & SPELLING</h3>
         <p><b>Mistakes:</b></p>
