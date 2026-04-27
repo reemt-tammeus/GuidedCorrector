@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GuidedCorrector</title>
+    <title>Check Prompt Sherlock</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -13,13 +13,13 @@
 
 <div id="screen-1" class="screen active">
     <div class="glass-box">
-        <h1>GuidedCorrector</h1>
-        <h2>Guided Writing Evaluation</h2>
-        <h3>with AI assistance</h3>
+        <h1>SHERLOCK</h1>
+        <h2>Guided Writing Evaluator</h2>
+        
         <label>Mode</label>
         <select id="appMode">
             <option value="school">School</option>
-            <option value="private">Private</option>
+            <option value="private">Private (Coming Soon)</option>
         </select>
 
         <label>Type of Text</label>
@@ -59,49 +59,92 @@
 </div>
 
 <div id="screen-3" class="screen">
-    <button class="emergency-exit" onclick="emergencyExit()">⚠️ Abbrechen & Text neu eingeben</button>
+    <button class="emergency-exit" onclick="emergencyExit()">⚠️ Abbrechen & Neu</button>
     <div class="work-container" style="justify-content: center; align-items: center; max-width: 800px; margin: auto;">
         <div class="panel" style="width: 100%; text-align: center;">
             <h2 style="color: var(--success);">Prompt kopiert!</h2>
-            <p>Bitte wechseln Sie in die ByLKI, fügen Sie den System-Prompt in das Chat-Fenster ein und kopieren Sie das Ergebnis.</p>
+            <p>Füge den Prompt in die ByLKI ein und kopiere das JSON-Ergebnis hierher.</p>
             <textarea id="jsonInput" rows="10" placeholder="Füge hier das KI-Ergebnis ein..." style="margin-top: 20px; margin-bottom: 20px;"></textarea>
-            <button class="btn-success" onclick="processData()">KI-Daten verarbeiten (Dashboard öffnen)</button>
+            <button class="btn-success" onclick="processData()">Daten auswerten & Wizard starten</button>
         </div>
     </div>
 </div>
 
 <div id="screen-4" class="screen">
-    <button class="emergency-exit" onclick="emergencyExit()">⚠️ Abbrechen & Text neu eingeben</button>
+    <button class="emergency-exit" onclick="emergencyExit()">⚠️ Abbrechen & Neu</button>
     <div class="work-container">
         
-        <div id="triage-grid" class="split-view">
-            <div class="col-1-3 panel scroll-box">
-                <div id="formalitiesSection">
-                    <h3>General Impression & Formalities</h3>
-                    <ul class="formalities-list" id="formalChecklist" style="padding:0;"></ul>
-                    <label>Points (max 2):</label>
-                    <div class="gi-group" id="giButtons">
-                        <button class="gi-btn" onclick="updateGI(0)">0</button>
-                        <button class="gi-btn" onclick="updateGI(1)">1</button>
-                        <button class="gi-btn" onclick="updateGI(2)">2</button>
+        <div class="split-view">
+            <div class="col-2-3 panel" style="display: flex; flex-direction: column;">
+                <h2>Marked Student Text</h2>
+                <div id="markedTextDisplay" class="marked-text-area step-1-view">
                     </div>
-                </div>
-                
-                <h3 style="margin-top: 30px;">Abschluss</h3>
-                <button id="btn-export" class="btn-success" style="padding: 20px;" onclick="generateRTF()">💾 RTF-Datei generieren</button>
-                
-                <div id="loop-controls">
-                    <button class="btn-primary" onclick="loopSameGenre()">🔄 New text with SAME genre and SAME Content Points</button>
-                    <button class="btn-danger" onclick="loopNewGenre()">🏠 New text with NEW genre</button>
+                <div id="viewStatus" style="margin-top: 15px; font-size: 0.9em; color: #aaa; text-align: right;">
+                    👁️ Ansicht: Content & Coherence
                 </div>
             </div>
 
-            <div class="col-2-3 panel scroll-box">
-                <h3>Major Learning Points (Grammatik)</h3>
-                <div id="grammarArea"></div>
+            <div class="col-1-3 panel scroll-box" style="position: relative;">
                 
-                <h3 style="margin-top: 30px;">Correction List (Spelling & Syntax)</h3>
-                <div id="minorArea"></div>
+                <div id="wizard-step-1" class="wizard-step active">
+                    <div class="step-indicator">Schritt 1 von 3</div>
+                    <h3>Content & Coherence</h3>
+                    <p style="font-size: 0.9em; color: #ccc;">Prüfe die Topic Sentences und Linking Devices links im Text.</p>
+                    <div id="contentMatrix"></div>
+                    <button class="btn-primary" style="margin-top: 20px;" onclick="goToStep(2)">Weiter zu Sprache & Fehlern ➡️</button>
+                </div>
+
+                <div id="wizard-step-2" class="wizard-step">
+                    <div class="step-indicator">Schritt 2 von 3</div>
+                    <h3>Language & Errors</h3>
+                    <p style="font-size: 0.9em; color: #ccc;">Prüfe die roten Markierungen im Text. Lösche unpassende KI-Kritik.</p>
+                    <div id="errorCardsArea"></div>
+                    
+                    <div style="display: flex; gap: 10px; margin-top: 20px;">
+                        <button class="btn-secondary" style="flex: 1;" onclick="goToStep(1)">⬅️ Zurück</button>
+                        <button class="btn-primary" style="flex: 2;" onclick="goToStep(3)">Weiter zum Scoreboard ➡️</button>
+                    </div>
+                </div>
+
+                <div id="wizard-step-3" class="wizard-step">
+                    <div class="step-indicator">Schritt 3 von 3</div>
+                    <h3>The Scoreboard</h3>
+                    <p style="font-size: 0.9em; color: #ccc;">Passe die Noten an. Der Text links zeigt nun die finale Übersicht.</p>
+                    
+                    <div class="score-input-group">
+                        <label>Content (max 7/10)</label>
+                        <input type="number" id="score-content" max="10" min="0">
+                    </div>
+                    <div class="score-input-group">
+                        <label>Coherence & Cohesion (max 7)</label>
+                        <input type="number" id="score-coherence" max="7" min="0">
+                    </div>
+                    <div class="score-input-group">
+                        <label>Grammar & Structures (max 7)</label>
+                        <input type="number" id="score-grammar" max="7" min="0">
+                        <div class="ai-reasoning" id="reason-grammar"></div>
+                    </div>
+                    <div class="score-input-group">
+                        <label>Vocabulary & Spelling (max 7)</label>
+                        <input type="number" id="score-vocab" max="7" min="0">
+                        <div class="ai-reasoning" id="reason-vocab"></div>
+                    </div>
+                    <div class="score-input-group">
+                        <label>General Impression (max 2)</label>
+                        <input type="number" id="score-gi" max="2" min="0">
+                    </div>
+
+                    <div style="display: flex; gap: 10px; margin-top: 25px;">
+                        <button class="btn-secondary" style="flex: 1;" onclick="goToStep(2)">⬅️ Zurück</button>
+                        <button id="btn-export" class="btn-success" style="flex: 2;" onclick="generateRTF()">💾 RTF Exportieren</button>
+                    </div>
+                    
+                    <div id="loop-controls">
+                        <button class="btn-primary" onclick="loopSameGenre()">🔄 Gleiches Genre, neuer Schüler</button>
+                        <button class="btn-danger" onclick="loopNewGenre()">🏠 Zurück zum Start</button>
+                    </div>
+                </div>
+
             </div>
         </div>
 
