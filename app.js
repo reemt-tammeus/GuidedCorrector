@@ -16,7 +16,21 @@ function emergencyExit() {
     }
 }
 
-function updateSubtypes() {}
+// --- DROPDOWN LOGIK ---
+function updateSubtypes() {
+    const textType = document.getElementById('textType').value;
+    const subLabel = document.getElementById('subTypeLabel');
+    const subSelect = document.getElementById('subType');
+    
+    // Versteckt das Subgenre, wenn Creative Text gewählt ist
+    if (textType === 'creative') {
+        subLabel.style.display = 'none';
+        subSelect.style.display = 'none';
+    } else {
+        subLabel.style.display = 'block';
+        subSelect.style.display = 'block';
+    }
+}
 
 // --- WIZARD STEUERUNG ---
 function goToStep(step) {
@@ -45,8 +59,7 @@ function copyPromptAndProceed() {
 
     if (!text || !cp) { alert("Bitte fülle alle Textfelder aus!"); return; }
 
-    // DER EINGEBAUTE SYSTEM-PROMPT
-    const systemPrompt = `Du bist der KI-Tutor "Check Prompt Sherlock" (Level B1+).
+    const systemPrompt = `Du bist der KI-Tutor "GuidedCorrector" (Level B1+).
 Analysiere den folgenden Text basierend auf diesen Prompts: [${cp}]
 
 Schülertext: """ ${text} """
@@ -103,14 +116,13 @@ function processData() {
         goToStep(1);
         navTo('screen-4');
     } catch (e) {
-        alert("Fehler beim Auslesen des JSON. Bitte prüfe den Output der ByLKI.");
+        alert("Fehler beim Auslesen des JSON. Bitte prüfe den Output der KI.");
     }
 }
 
 function buildMarkedText() {
     let text = document.getElementById('studentText').value;
 
-    // Linking Devices (☑)
     if(rawData.language_structures && rawData.language_structures.linking_devices) {
         rawData.language_structures.linking_devices.forEach(link => {
             let safeLink = link.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -118,7 +130,6 @@ function buildMarkedText() {
         });
     }
 
-    // Errors (☐) - Getrennt nach Grammar und Vocab
     if(rawData.errors) {
         rawData.errors.forEach(err => {
             if(err && err.quote) {
@@ -128,7 +139,6 @@ function buildMarkedText() {
         });
     }
 
-    // Topic Sentences (Zahlen ¹²)
     if(rawData.content_analysis) {
         rawData.content_analysis.forEach((ca, index) => {
             if(ca.topic_sentence_quote) {
@@ -142,7 +152,6 @@ function buildMarkedText() {
 }
 
 function buildWizardPanels() {
-    // 1. Content
     let cHtml = "<table style='width:100%; font-size:0.9em; text-align:left;'><tr><th>Prompt</th><th>Topic Sentence</th><th>SP</th><th>Rating</th></tr>";
     if(rawData.content_analysis) {
         rawData.content_analysis.forEach(ca => {
@@ -152,13 +161,11 @@ function buildWizardPanels() {
     cHtml += "</table>";
     document.getElementById('contentMatrix').innerHTML = cHtml;
 
-    // 2. Coherence
     if(rawData.language_structures) {
         document.getElementById('linkingList').innerText = (rawData.language_structures.linking_devices || []).join(', ');
         document.getElementById('complexList').innerText = (rawData.language_structures.complex_structures || []).join(', ');
     }
 
-    // 3 & 4. Errors aufteilen
     let gramHtml = "", vocHtml = "";
     if(rawData.errors) {
         rawData.errors.forEach((err, i) => {
@@ -178,7 +185,6 @@ function buildWizardPanels() {
     document.getElementById('grammarCardsArea').innerHTML = gramHtml || '<p style="color:var(--success)">Keine Grammatikfehler.</p>';
     document.getElementById('vocabCardsArea').innerHTML = vocHtml || '<p style="color:var(--success)">Keine Vokabel/Spelling-Fehler.</p>';
 
-    // 5. Formalities
     let fHtml = "";
     if(rawData.formalities) {
         fHtml += `<li>Salutation: ${rawData.formalities.salutation_present ? '✅' : '❌'}</li>`;
@@ -187,7 +193,6 @@ function buildWizardPanels() {
     }
     document.getElementById('formalChecklist').innerHTML = fHtml;
 
-    // Scoreboard vorbefüllen (Max 7/7/7/7/2)
     if(rawData.scores) {
         document.getElementById('score-content').value = Math.min(rawData.scores.content || 0, 7);
         document.getElementById('score-coherence').value = Math.min(rawData.scores.coherence || 0, 7);
@@ -208,10 +213,9 @@ function buildWizardPanels() {
 function deleteError(i) {
     rawData.errors[i] = null;
     document.getElementById(`err-${i}`).remove();
-    buildMarkedText(); // Rendert den Text neu ohne diesen Fehler
+    buildMarkedText(); 
 }
 
-// --- EXPORT (Das exakte Scholz Anton Format) ---
 function generateRTF() {
     const sC = parseInt(document.getElementById('score-content').value) || 0;
     const sCoh = parseInt(document.getElementById('score-coherence').value) || 0;
@@ -226,7 +230,6 @@ function generateRTF() {
     const rV = document.getElementById('reason-vocab').value;
     const rGi = document.getElementById('reason-gi').value;
 
-    // Tabellen generieren
     let cRows = "";
     if(rawData.content_analysis) {
         rawData.content_analysis.forEach(ca => {
@@ -247,7 +250,6 @@ function generateRTF() {
     const linking = (rawData.language_structures && rawData.language_structures.linking_devices) ? rawData.language_structures.linking_devices.join(', ') : '';
     const complex = (rawData.language_structures && rawData.language_structures.complex_structures) ? rawData.language_structures.complex_structures.join(', ') : '';
     
-    // HTML-Engine bereitet den markierten Text für Word vor
     let textForWord = document.getElementById('markedTextDisplay').innerHTML.replace(/<span class="[^"]*">/g, '').replace(/<\/span>/g, '').replace(/\n/g, '<br><br>');
 
     const html = `
@@ -305,7 +307,22 @@ function generateRTF() {
 
     const blob = new Blob(['\ufeff', html], { type: 'application/msword' });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a'); a.href = url; a.download = `Scholz_Anton_Feedback.doc`;
+    const a = document.createElement('a'); a.href = url; a.download = `GuidedCorrector_Feedback.doc`;
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
 
-    document.
+    document.getElementById('btn-export').style.display = 'none';
+    document.getElementById('loop-controls').style.display = 'flex';
+}
+
+function loopSameGenre() {
+    document.getElementById('studentText').value = "";
+    document.getElementById('jsonInput').value = "";
+    navTo('screen-2');
+}
+
+function loopNewGenre() {
+    document.getElementById('studentText').value = "";
+    document.getElementById('jsonInput').value = "";
+    document.getElementById('contentPoints').value = "";
+    navTo('screen-1');
+}
