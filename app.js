@@ -113,13 +113,16 @@ function processData() {
     try {
         let input = document.getElementById('jsonInput').value;
         
-        // DER STAUBSAUGER: Ersetzt alle Non-Breaking Spaces und andere fiese Formatierungs-Zeichen durch saubere Leerzeichen!
-        input = input.replace(/[\u00A0\u200B\u200C\u200D\uFEFF]/g, ' '); 
+        // Der ultimative Staubsauger: Entfernt ALLE fiesen Whitespaces und Steuerzeichen, die KIs gerne mal produzieren
+        input = input.replace(/[\u00A0-\u00A3\u1680\u2000-\u200A\u2028\u2029\u202F\u205F\u3000\uFEFF]/g, ' '); 
 
         const extracted = input.match(/\{[\s\S]*\}/);
-        if (!extracted) throw new Error("Kein JSON gefunden.");
+        if (!extracted) throw new Error("Es konnte keine { JSON } Klammerstruktur gefunden werden.");
         
         rawData = JSON.parse(extracted[0]);
+
+        // Fallback: Falls die KI komplett leere Objekte liefert
+        if (!rawData) rawData = {};
 
         buildMarkedText();
         buildWizardPanels();
@@ -134,7 +137,7 @@ function processData() {
 }
 
 function makeFlexibleRegex(str) {
-    if (!str) return "";
+    if (typeof str !== 'string' || !str) return "";
     str = str.replace(/[.,!?]+$/, "");
     let escaped = str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     escaped = escaped.replace(/\s+/g, '\\s+');
@@ -142,51 +145,54 @@ function makeFlexibleRegex(str) {
 }
 
 function buildMarkedText() {
-    let text = document.getElementById('studentText').value;
+    let text = document.getElementById('studentText').value || "";
 
-    if(rawData.content_analysis) {
+    if(Array.isArray(rawData?.content_analysis)) {
         rawData.content_analysis.forEach(ca => {
-            let ts = ca.ts_quote || ca.topic_sentence_quote;
-            if(ts && ts.trim() !== "") {
+            if(!ca) return;
+            let ts = ca.ts_quote || ca.topic_sentence_quote || "";
+            if(ts.trim() !== "") {
                 let safeTS = makeFlexibleRegex(ts.trim());
-                text = text.replace(new RegExp(safeTS, 'gi'), `$&<sup class="hl-topic" data-export="color: #3498db; font-weight: bold;">0</sup>`);
+                if(safeTS) text = text.replace(new RegExp(safeTS, 'gi'), `$&<sup class="hl-topic" data-export="color: #3498db; font-weight: bold;">0</sup>`);
             }
-            if(ca.sp_quotes && ca.sp_quotes.length > 0) {
+            if(Array.isArray(ca.sp_quotes)) {
                 ca.sp_quotes.forEach((sp, i) => {
-                    if(sp && sp.trim() !== "") {
+                    if(typeof sp === 'string' && sp.trim() !== "") {
                         let safeSP = makeFlexibleRegex(sp.trim());
-                        text = text.replace(new RegExp(safeSP, 'gi'), `$&<sup class="hl-topic" data-export="color: #3498db; font-weight: bold;">${i+1}</sup>`);
+                        if(safeSP) text = text.replace(new RegExp(safeSP, 'gi'), `$&<sup class="hl-topic" data-export="color: #3498db; font-weight: bold;">${i+1}</sup>`);
                     }
                 });
             }
         });
     }
 
-    if(rawData.language_structures && rawData.language_structures.complex_structures_quotes) {
+    if(Array.isArray(rawData?.language_structures?.complex_structures_quotes)) {
         rawData.language_structures.complex_structures_quotes.forEach(quote => {
-            if(quote && quote.trim() !== "") {
+            if(typeof quote === 'string' && quote.trim() !== "") {
                 let safeQuote = makeFlexibleRegex(quote.trim());
-                text = text.replace(new RegExp(safeQuote, 'gi'), `<span class="hl-complex" data-export="border-bottom: 2px solid #2ecc71;">$&</span>`);
+                if(safeQuote) text = text.replace(new RegExp(safeQuote, 'gi'), `<span class="hl-complex" data-export="border-bottom: 2px solid #2ecc71;">$&</span>`);
             }
         });
     }
 
-    if(rawData.language_structures && rawData.language_structures.linking_devices) {
+    if(Array.isArray(rawData?.language_structures?.linking_devices)) {
         rawData.language_structures.linking_devices.forEach(link => {
-            let safeLink = makeFlexibleRegex(link.trim());
-            text = text.replace(new RegExp(`\\b${safeLink}\\b`, 'gi'), `<span class="hl-link" data-export="background-color: #a9dfbf; padding: 2px;">$&</span>`);
+            if(typeof link === 'string' && link.trim() !== "") {
+                let safeLink = makeFlexibleRegex(link.trim());
+                if(safeLink) text = text.replace(new RegExp(`\\b${safeLink}\\b`, 'gi'), `<span class="hl-link" data-export="background-color: #a9dfbf; padding: 2px;">$&</span>`);
+            }
         });
     }
 
-    if(rawData.errors) {
+    if(Array.isArray(rawData?.errors)) {
         rawData.errors.forEach(err => {
-            if(err && err.quote && err.quote.trim() !== "") {
+            if(err && typeof err.quote === 'string' && err.quote.trim() !== "") {
                 let isGram = err.type === 'grammar';
                 let cssClass = isGram ? 'hl-grammar' : 'hl-vocab';
                 let expStyle = isGram ? 'background-color: #f5b7b1; padding: 2px;' : 'background-color: #fdebd0; padding: 2px;';
                 
                 let safeQuote = makeFlexibleRegex(err.quote.trim());
-                text = text.replace(new RegExp(safeQuote, 'gi'), `<span class="${cssClass}" data-export="${expStyle}">$&</span>`);
+                if(safeQuote) text = text.replace(new RegExp(safeQuote, 'gi'), `<span class="${cssClass}" data-export="${expStyle}">$&</span>`);
             }
         });
     }
@@ -196,27 +202,26 @@ function buildMarkedText() {
 
 function buildWizardPanels() {
     let cHtml = "<table style='width:100%; font-size:0.9em; text-align:left;'><tr><th>Prompt</th><th>Rating</th></tr>";
-    if(rawData.content_analysis) {
+    if(Array.isArray(rawData?.content_analysis)) {
         rawData.content_analysis.forEach(ca => {
-            cHtml += `<tr><td style='border-bottom:1px solid #444; padding:5px;'>${ca.prompt}</td><td style='border-bottom:1px solid #444; padding:5px; color:var(--secondary); font-weight:bold;'>${ca.rating}</td></tr>`;
+            if(!ca) return;
+            cHtml += `<tr><td style='border-bottom:1px solid #444; padding:5px;'>${ca.prompt || '?'}</td><td style='border-bottom:1px solid #444; padding:5px; color:var(--secondary); font-weight:bold;'>${ca.rating || '-'}</td></tr>`;
         });
     }
     cHtml += "</table>";
     document.getElementById('contentMatrix').innerHTML = cHtml;
 
-    if(rawData.language_structures) {
-        document.getElementById('linkingList').innerText = (rawData.language_structures.linking_devices || []).join(', ');
-        document.getElementById('complexList').innerText = (rawData.language_structures.complex_structures_quotes || []).join(', ');
-    }
+    document.getElementById('linkingList').innerText = Array.isArray(rawData?.language_structures?.linking_devices) ? rawData.language_structures.linking_devices.join(', ') : '';
+    document.getElementById('complexList').innerText = Array.isArray(rawData?.language_structures?.complex_structures_quotes) ? rawData.language_structures.complex_structures_quotes.join(', ') : '';
 
     let gramHtml = "", vocHtml = "";
-    if(rawData.errors) {
+    if(Array.isArray(rawData?.errors)) {
         rawData.errors.forEach((err, i) => {
             if(!err) return;
             let card = `
                 <div class="card" id="err-${i}">
                     <div>
-                        <div><s>${err.quote}</s> &rarr; <b style="color:var(--success)">${err.correction}</b></div>
+                        <div><s>${err.quote || ''}</s> &rarr; <b style="color:var(--success)">${err.correction || ''}</b></div>
                         <div style="font-size:0.8em; color:#aaa">${err.explanation || 'Rechtschreibung'}</div>
                     </div>
                     <button class="btn-reject" onclick="deleteError(${i})">Löschen</button>
@@ -230,65 +235,60 @@ function buildWizardPanels() {
 
     // --- FORMALITIES & NEUE GENRE LOGIK ---
     let fHtml = "";
-    if(rawData.formalities) {
+    if(rawData?.formalities) {
         fHtml += `<li>Salutation: ${rawData.formalities.salutation_present ? '✅' : '❌'}</li>`;
         fHtml += `<li>Closing: ${rawData.formalities.closing_present ? '✅' : '❌'}</li>`;
         fHtml += `<li>Paragraphing: ${rawData.formalities.paragraphs_correct ? '✅' : '❌'}</li>`;
         
-        // Füge den 4. Punkt hinzu, wenn es eine Beschwerde oder Bewerbung ist
         const textType = document.getElementById('textType').value;
         const subType = document.getElementById('subType').value;
         
         if (textType === 'letter' && (subType === 'complaint' || subType === 'application')) {
             let reqName = subType === 'complaint' ? 'Demand for action' : 'Offer for interview';
-            let reqMet = rawData.formalities.genre_requirement_met;
+            let reqMet = rawData.formalities.genre_requirement_met === true;
             let icon = reqMet ? '✅' : '❌';
             fHtml += `<li>Genre Requirement (${reqName}): ${icon}</li>`;
         }
     }
-    document.getElementById('formalChecklist').innerHTML = fHtml;
+    document.getElementById('formalChecklist').innerHTML = fHtml || '<p>Keine Formalien-Daten gefunden.</p>';
 
     // --- SCOREBOARD & PUNKTE-SPERRE ---
-    if(rawData.scores) {
-        document.getElementById('score-content').value = Math.min(rawData.scores.content || 0, 7);
-        document.getElementById('score-coherence').value = Math.min(rawData.scores.coherence || 0, 7);
-        document.getElementById('score-grammar').value = Math.min(rawData.scores.grammar || 0, 7);
-        document.getElementById('score-vocab').value = Math.min(rawData.scores.vocab || 0, 7);
-        
-        // Logik für General Impression (Max 2, oder Max 1 wenn Forderung fehlt)
-        let maxGi = 2;
-        let giReasoning = rawData.scores.reasoning ? rawData.scores.reasoning.gi : '';
-        
-        const textType = document.getElementById('textType').value;
-        const subType = document.getElementById('subType').value;
-        
-        if (textType === 'letter' && (subType === 'complaint' || subType === 'application')) {
-            if (rawData.formalities && rawData.formalities.genre_requirement_met === false) {
-                maxGi = 1; 
-                giReasoning = "⚠️ Max 1 Punkt (Forderung/Interview-Angebot fehlt!). " + giReasoning;
-            }
+    let maxGi = 2;
+    let giReasoning = rawData?.scores?.reasoning?.gi || '';
+    
+    const textType = document.getElementById('textType').value;
+    const subType = document.getElementById('subType').value;
+    
+    if (textType === 'letter' && (subType === 'complaint' || subType === 'application')) {
+        if (rawData?.formalities?.genre_requirement_met === false) {
+            maxGi = 1; 
+            giReasoning = "⚠️ Max 1 Punkt (Forderung/Interview-Angebot fehlt!). " + giReasoning;
         }
-        
-        document.getElementById('maxGiDisplay').innerText = maxGi;
-        let givenGi = Math.min(rawData.scores.gi || 0, maxGi);
-        let giInput = document.getElementById('score-gi');
-        giInput.max = maxGi;
-        giInput.value = givenGi;
-        
-        if(rawData.scores.reasoning) {
-            document.getElementById('reason-content').value = rawData.scores.reasoning.content || '';
-            document.getElementById('reason-coherence').value = rawData.scores.reasoning.coherence || '';
-            document.getElementById('reason-grammar').value = rawData.scores.reasoning.grammar || '';
-            document.getElementById('reason-vocab').value = rawData.scores.reasoning.vocab || '';
-        }
-        document.getElementById('reason-gi').value = giReasoning;
     }
+
+    document.getElementById('maxGiDisplay').innerText = maxGi;
+    document.getElementById('score-content').value = Math.min(rawData?.scores?.content || 0, 7);
+    document.getElementById('score-coherence').value = Math.min(rawData?.scores?.coherence || 0, 7);
+    document.getElementById('score-grammar').value = Math.min(rawData?.scores?.grammar || 0, 7);
+    document.getElementById('score-vocab').value = Math.min(rawData?.scores?.vocab || 0, 7);
+    
+    let giInput = document.getElementById('score-gi');
+    giInput.max = maxGi;
+    giInput.value = Math.min(rawData?.scores?.gi || 0, maxGi);
+    
+    document.getElementById('reason-content').value = rawData?.scores?.reasoning?.content || '';
+    document.getElementById('reason-coherence').value = rawData?.scores?.reasoning?.coherence || '';
+    document.getElementById('reason-grammar').value = rawData?.scores?.reasoning?.grammar || '';
+    document.getElementById('reason-vocab').value = rawData?.scores?.reasoning?.vocab || '';
+    document.getElementById('reason-gi').value = giReasoning;
 }
 
 function deleteError(i) {
-    rawData.errors[i] = null;
-    document.getElementById(`err-${i}`).remove();
-    buildMarkedText(); 
+    if(rawData && rawData.errors) {
+        rawData.errors[i] = null;
+        document.getElementById(`err-${i}`).remove();
+        buildMarkedText(); 
+    }
 }
 
 // --- EXPORT (Word Dokument) ---
@@ -307,25 +307,26 @@ function generateRTF() {
     const rGi = document.getElementById('reason-gi').value;
 
     let cRows = "";
-    if(rawData.content_analysis) {
+    if(Array.isArray(rawData?.content_analysis)) {
         rawData.content_analysis.forEach(ca => {
-            let spCount = ca.sp_quotes ? ca.sp_quotes.length : 0;
+            if(!ca) return;
+            let spCount = Array.isArray(ca.sp_quotes) ? ca.sp_quotes.length : 0;
             let tsFound = (ca.ts_quote || ca.topic_sentence_quote) ? "Yes" : "No";
-            cRows += `<tr><td>${ca.prompt}</td><td>${tsFound}</td><td>${spCount}</td><td><b>${ca.rating}</b></td></tr>`;
+            cRows += `<tr><td>${ca.prompt || ''}</td><td>${tsFound}</td><td>${spCount}</td><td><b>${ca.rating || ''}</b></td></tr>`;
         });
     }
 
     let gRows = "", vRows = "";
-    if(rawData.errors) {
+    if(Array.isArray(rawData?.errors)) {
         rawData.errors.forEach(err => {
             if(!err) return;
-            let row = `<tr><td><s>${err.quote}</s></td><td>${err.correction}</td><td>${err.explanation || ''}</td></tr>`;
+            let row = `<tr><td><s>${err.quote || ''}</s></td><td>${err.correction || ''}</td><td>${err.explanation || ''}</td></tr>`;
             if(err.type === 'grammar') gRows += row;
             else vRows += row;
         });
     }
 
-    const linking = (rawData.language_structures && rawData.language_structures.linking_devices) ? rawData.language_structures.linking_devices.join(', ') : '';
+    const linking = Array.isArray(rawData?.language_structures?.linking_devices) ? rawData.language_structures.linking_devices.join(', ') : '';
     
     let textHTML = document.getElementById('markedTextDisplay').innerHTML;
     textHTML = textHTML.replace(/\n/g, '<br><br>');
