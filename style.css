@@ -3,11 +3,11 @@
     --secondary: #3498db; 
     --error: #e74c3c; 
     --success: #27ae60;
-    --hl-topic-color: #3498db;                 /* Sanftes Blau für Zahlen */
-    --hl-link-color: rgba(39, 174, 96, 0.4);   /* Grün für Linking */
-    --hl-gram-color: rgba(231, 76, 60, 0.5);   /* Rot für Grammar */
-    --hl-voc-color: rgba(230, 126, 34, 0.5);   /* Orange für Vocab */
-    --hl-complex-border: 2px solid #2ecc71;    /* Grüne Linie für Complex */
+    --hl-topic-color: #3498db;                 
+    --hl-link-color: rgba(39, 174, 96, 0.4);   
+    --hl-gram-color: rgba(231, 76, 60, 0.5);   
+    --hl-voc-color: rgba(230, 126, 34, 0.5);   
+    --hl-complex-border: 2px solid #2ecc71;    
 }
 
 body, html { margin: 0; padding: 0; height: 100%; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; overflow: hidden; }
@@ -21,7 +21,23 @@ body.work-mode #bg-overlay { background: rgba(0, 0, 0, 0.6); }
 .screen { display: none; width: 100%; height: 100%; flex-direction: column; align-items: center; padding: 20px; box-sizing: border-box; overflow-y: auto; }
 .screen.active { display: flex; }
 
-.glass-box { width: 90%; max-width: 500px; padding: 40px; margin: auto; background: rgba(0, 0, 0, 0.75); backdrop-filter: blur(15px); border: 1.5px solid rgba(255, 255, 255, 0.2); border-radius: 28px; text-align: center; color: #fff; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+.glass-box { 
+    width: 90%; max-width: 500px; padding: 40px; margin: auto; 
+    background: rgba(0, 0, 0, 0.75); backdrop-filter: blur(15px); 
+    border: 1.5px solid rgba(255, 255, 255, 0.2); border-radius: 28px; 
+    text-align: center; color: #fff; box-shadow: 0 10px 30px rgba(0,0,0,0.5); 
+}
+
+/* KINO-FADE IN FÜR STARTBILDSCHIRM */
+#screen-1 .glass-box {
+    opacity: 0;
+    animation: fadeInBox 1s ease-in forwards;
+    animation-delay: 2s;
+}
+@keyframes fadeInBox {
+    to { opacity: 1; }
+}
+
 .glass-box h1 { margin-top: 0; letter-spacing: 2px; }
 .glass-box h2, .glass-box h3 { color: #ffffff; text-shadow: 0 2px 4px rgba(0,0,0,0.5); margin-top: 5px; }
 .glass-box h3 { font-weight: normal; opacity: 0.8; margin-bottom: 30px; }
