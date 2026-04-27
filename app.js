@@ -57,26 +57,27 @@ function copyPromptAndProceed() {
         return; 
     }
 
-    // SICHERHEITS-CHECK: Verhindert, dass JSON als Schülertext eingefügt wird
     if (text.trim().startsWith('{') && text.trim().endsWith('}')) {
-        alert("⚠️ Halt! Du hast das KI-JSON in das Feld für den Schülertext eingefügt.\n\nBitte füge hier auf Screen 2 den ECHTEN, englischen Text des Schülers ein. Das JSON wird erst im nächsten Schritt benötigt.");
+        alert("⚠️ Halt! Du hast das KI-JSON in das Feld für den Schülertext eingefügt.\n\nBitte füge hier auf Screen 2 den ECHTEN, englischen Text des Schülers ein.");
         return;
     }
 
+    // MASSIV VERSCHÄRFTER SYSTEM PROMPT FÜR DIE KI
     const systemPrompt = `Du bist der KI-Tutor "GuidedCorrector" (Level B1+).
 Analysiere den folgenden Text basierend auf diesen Prompts: [${cp}]
 
 Schülertext: """ ${text} """
 
-WICHTIG: Verändere den Originaltext NIEMALS. Nutze EXAKTE Zitate aus dem Schülertext für das JSON.
-Bei "content_analysis": Zitiere den Topic Sentence (ts_quote). Zitiere danach ALLE Supporting Points exakt als Array von Strings (sp_quotes).
-Bei "complex_structures_quotes": Zitiere die genauen Passagen, in denen komplexe Strukturen vorkommen.
+WICHTIGSTE REGELN FÜR DAS JSON:
+1. ZITATE: Du darfst den Originaltext NIEMALS verändern. Wenn du Sätze als 'ts_quote' oder 'sp_quotes' zitierst, MUSST du sie exakt so übernehmen, wie sie dort stehen. Korrigiere KEINE Tipp- oder Grammatikfehler im Zitat (z.B. schreibe zwingend "aound" wenn der Schüler "aound" geschrieben hat!).
+2. RATING: Das "rating" in der content_analysis MUSS zwingend einer dieser vier Buchstaben sein: "F" (Fully), "E" (Essentially), "I" (Incompletely) oder "N" (Not at all). Andere Noten wie A, B oder C sind streng verboten.
+3. INHALT: Zitiere für jeden Prompt den Topic Sentence (ts_quote) und ALLE weiteren inhaltlich relevanten Sätze als Array (sp_quotes).
 
 Erzeuge AUSSCHLIESSLICH dieses JSON-Format als Antwort:
 {
   "formalities": { "salutation_present": true, "closing_present": true, "paragraphs_correct": true },
   "content_analysis": [
-    { "prompt": "Thema 1", "ts_quote": "Exaktes Zitat Topic Sentence", "sp_quotes": ["Exaktes Zitat SP 1", "Exaktes Zitat SP 2"], "rating": "F" }
+    { "prompt": "Thema 1", "ts_quote": "Exaktes Zitat TS inkl. Fehlern", "sp_quotes": ["Exaktes Zitat SP 1", "Exaktes Zitat SP 2"], "rating": "F" }
   ],
   "language_structures": {
     "linking_devices": ["First of all", "Due to"],
@@ -120,10 +121,17 @@ function processData() {
     }
 }
 
-// Diese Funktion macht die Suche kugelsicher gegen falsche Leerzeichen/Zeilenumbrüche der KI
+// Diese Funktion macht die Suche extrem fehlerresistent
 function makeFlexibleRegex(str) {
     if (!str) return "";
-    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '\\s+');
+    // Entfernt Satzzeichen am Ende des KI-Zitats, falls die KI sie weglässt
+    str = str.replace(/[.,!?]+$/, "");
+    // Regex Escaping für Sonderzeichen
+    let escaped = str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    // Flexible Leerzeichen
+    escaped = escaped.replace(/\s+/g, '\\s+');
+    // Erlaubt Satzzeichen am Ende des gefundenen Textes
+    return escaped + "[.,!?]*";
 }
 
 function buildMarkedText() {
@@ -161,7 +169,7 @@ function buildMarkedText() {
         });
     }
 
-    // 4. Content Analysis: Echte <sup> Tags für sicheren Word-Export
+    // 4. Content Analysis: Blaue Zahlen anhängen
     if(rawData.content_analysis) {
         rawData.content_analysis.forEach(ca => {
             // Topic Sentence = 0
@@ -286,10 +294,8 @@ function generateRTF() {
 
     const linking = (rawData.language_structures && rawData.language_structures.linking_devices) ? rawData.language_structures.linking_devices.join(', ') : '';
     
-    // Bereite Text für Word vor: Wandle die data-export Styles in echte Inline-Styles um
     let textHTML = document.getElementById('markedTextDisplay').innerHTML;
     textHTML = textHTML.replace(/\n/g, '<br><br>');
-    // Die Regex ersetzt die HTML Klassen durch echte CSS Befehle für MS Word
     textHTML = textHTML.replace(/class="hl-[^"]*"\s+data-export="([^"]*)"/g, 'style="$1"');
 
     const html = `
