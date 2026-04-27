@@ -57,16 +57,13 @@ function copyPromptAndProceed() {
         return; 
     }
 
-    // Der blockierende Sicherheits-Check wurde hier restlos entfernt!
-
-    // MASSIV VERSCHÄRFTER SYSTEM PROMPT FÜR DIE KI
     const systemPrompt = `Du bist der KI-Tutor "GuidedCorrector" (Level B1+).
 Analysiere den folgenden Text basierend auf diesen Prompts: [${cp}]
 
 Schülertext: """ ${text} """
 
 WICHTIGSTE REGELN FÜR DAS JSON:
-1. ZITATE: Du darfst den Originaltext NIEMALS verändern. Wenn du Sätze als 'ts_quote' oder 'sp_quotes' zitierst, MUSST du sie exakt so übernehmen, wie sie dort stehen. Korrigiere KEINE Tipp- oder Grammatikfehler im Zitat (z.B. schreibe zwingend "aound" wenn der Schüler "aound" geschrieben hat!).
+1. ZITATE: Du darfst den Originaltext NIEMALS verändern. Wenn du Sätze als 'ts_quote' oder 'sp_quotes' zitierst, MUSST du sie exakt so übernehmen, wie sie dort stehen. Korrigiere KEINE Tipp- oder Grammatikfehler im Zitat.
 2. RATING: Das "rating" in der content_analysis MUSS zwingend einer dieser vier Buchstaben sein: "F" (Fully), "E" (Essentially), "I" (Incompletely) oder "N" (Not at all). Andere Noten wie A, B oder C sind streng verboten.
 3. INHALT: Zitiere für jeden Prompt den Topic Sentence (ts_quote) und ALLE weiteren inhaltlich relevanten Sätze als Array (sp_quotes).
 
@@ -118,7 +115,6 @@ function processData() {
     }
 }
 
-// Diese Funktion macht die Suche extrem fehlerresistent
 function makeFlexibleRegex(str) {
     if (!str) return "";
     str = str.replace(/[.,!?]+$/, "");
@@ -130,25 +126,48 @@ function makeFlexibleRegex(str) {
 function buildMarkedText() {
     let text = document.getElementById('studentText').value;
 
-    // 1. Complex Structures (Grün unterstrichen)
-    if(rawData.language_structures && rawData.language_structures.complex_structures_quotes) {
-        rawData.language_structures.complex_structures_quotes.forEach(quote => {
-            if(quote && quote.trim() !== "") {
-                let safeQuote = makeFlexibleRegex(quote.trim());
-                text = text.replace(new RegExp(safeQuote, 'g'), `<span class="hl-complex" data-export="border-bottom: 2px solid #2ecc71;">$&</span>`);
+    // REIHENFOLGE GEÄNDERT:
+    // 1. Content Analysis (Ganze Sätze) MUSS zuerst passieren, damit die Sätze noch nicht von Fehlern zerrissen sind!
+    if(rawData.content_analysis) {
+        rawData.content_analysis.forEach(ca => {
+            // Topic Sentence = 0
+            let ts = ca.ts_quote || ca.topic_sentence_quote;
+            if(ts && ts.trim() !== "") {
+                let safeTS = makeFlexibleRegex(ts.trim());
+                // 'gi' für Case-Insensitive, falls die KI Groß-/Kleinschreibung verhaut
+                text = text.replace(new RegExp(safeTS, 'gi'), `$&<sup class="hl-topic" data-export="color: #3498db; font-weight: bold;">0</sup>`);
+            }
+            // Supporting Points = 1, 2, 3...
+            if(ca.sp_quotes && ca.sp_quotes.length > 0) {
+                ca.sp_quotes.forEach((sp, i) => {
+                    if(sp && sp.trim() !== "") {
+                        let safeSP = makeFlexibleRegex(sp.trim());
+                        text = text.replace(new RegExp(safeSP, 'gi'), `$&<sup class="hl-topic" data-export="color: #3498db; font-weight: bold;">${i+1}</sup>`);
+                    }
+                });
             }
         });
     }
 
-    // 2. Linking Devices (Grün hinterlegt)
-    if(rawData.language_structures && rawData.language_structures.linking_devices) {
-        rawData.language_structures.linking_devices.forEach(link => {
-            let safeLink = makeFlexibleRegex(link.trim());
-            text = text.replace(new RegExp(`\\b${safeLink}\\b`, 'g'), `<span class="hl-link" data-export="background-color: #a9dfbf; padding: 2px;">$&</span>`);
+    // 2. Complex Structures (Lange Phrasen)
+    if(rawData.language_structures && rawData.language_structures.complex_structures_quotes) {
+        rawData.language_structures.complex_structures_quotes.forEach(quote => {
+            if(quote && quote.trim() !== "") {
+                let safeQuote = makeFlexibleRegex(quote.trim());
+                text = text.replace(new RegExp(safeQuote, 'gi'), `<span class="hl-complex" data-export="border-bottom: 2px solid #2ecc71;">$&</span>`);
+            }
         });
     }
 
-    // 3. Errors (Rot/Orange)
+    // 3. Linking Devices (Kurze Phrasen)
+    if(rawData.language_structures && rawData.language_structures.linking_devices) {
+        rawData.language_structures.linking_devices.forEach(link => {
+            let safeLink = makeFlexibleRegex(link.trim());
+            text = text.replace(new RegExp(`\\b${safeLink}\\b`, 'gi'), `<span class="hl-link" data-export="background-color: #a9dfbf; padding: 2px;">$&</span>`);
+        });
+    }
+
+    // 4. Errors (Einzelne Wörter)
     if(rawData.errors) {
         rawData.errors.forEach(err => {
             if(err && err.quote && err.quote.trim() !== "") {
@@ -157,28 +176,7 @@ function buildMarkedText() {
                 let expStyle = isGram ? 'background-color: #f5b7b1; padding: 2px;' : 'background-color: #fdebd0; padding: 2px;';
                 
                 let safeQuote = makeFlexibleRegex(err.quote.trim());
-                text = text.replace(new RegExp(safeQuote, 'g'), `<span class="${cssClass}" data-export="${expStyle}">$&</span>`);
-            }
-        });
-    }
-
-    // 4. Content Analysis: Blaue Zahlen anhängen
-    if(rawData.content_analysis) {
-        rawData.content_analysis.forEach(ca => {
-            // Topic Sentence = 0
-            let ts = ca.ts_quote || ca.topic_sentence_quote;
-            if(ts && ts.trim() !== "") {
-                let safeTS = makeFlexibleRegex(ts.trim());
-                text = text.replace(new RegExp(safeTS, 'g'), `$&<sup class="hl-topic" data-export="color: #3498db; font-weight: bold;">0</sup>`);
-            }
-            // Supporting Points = 1, 2, 3...
-            if(ca.sp_quotes && ca.sp_quotes.length > 0) {
-                ca.sp_quotes.forEach((sp, i) => {
-                    if(sp && sp.trim() !== "") {
-                        let safeSP = makeFlexibleRegex(sp.trim());
-                        text = text.replace(new RegExp(safeSP, 'g'), `$&<sup class="hl-topic" data-export="color: #3498db; font-weight: bold;">${i+1}</sup>`);
-                    }
-                });
+                text = text.replace(new RegExp(safeQuote, 'gi'), `<span class="${cssClass}" data-export="${expStyle}">$&</span>`);
             }
         });
     }
