@@ -108,20 +108,30 @@ Erzeuge AUSSCHLIESSLICH dieses JSON-Format als Antwort:
     });
 }
 
-// --- DATENVERARBEITUNG & HIGHLIGHTING ---
+// --- DATENVERARBEITUNG & HIGHLIGHTING (DER GOD-MODE STAUBSAUGER) ---
 function processData() {
     try {
         let input = document.getElementById('jsonInput').value;
         
-        // Der ultimative Staubsauger: Entfernt ALLE fiesen Whitespaces und Steuerzeichen, die KIs gerne mal produzieren
-        input = input.replace(/[\u00A0-\u00A3\u1680\u2000-\u200A\u2028\u2029\u202F\u205F\u3000\uFEFF]/g, ' '); 
+        // 1. Vernichte alle Zero-Width-Zeichen und Steuerzeichen-Zombies komplett
+        input = input.replace(/[\u200B-\u200D\uFEFF\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '');
 
-        const extracted = input.match(/\{[\s\S]*\}/);
-        if (!extracted) throw new Error("Es konnte keine { JSON } Klammerstruktur gefunden werden.");
+        // 2. Wandle ALLES, was im Regex als Whitespace gilt, aber KEIN echtes Leerzeichen/Enter/Tab ist, in ein echtes Leerzeichen um
+        input = input.replace(/[^\S\r\n\t ]/g, ' ');
+
+        // 3. Chirurgischer Schnitt: Finde exakt den Start und das Ende des JSON-Objekts
+        const startIndex = input.indexOf('{');
+        const endIndex = input.lastIndexOf('}');
         
-        rawData = JSON.parse(extracted[0]);
+        if (startIndex === -1 || endIndex === -1 || endIndex < startIndex) {
+            throw new Error("Es konnte keine { JSON } Klammerstruktur im Text gefunden werden.");
+        }
 
-        // Fallback: Falls die KI komplett leere Objekte liefert
+        const cleanJsonString = input.substring(startIndex, endIndex + 1);
+        
+        // Jetzt ist das JSON klinisch rein und bereit
+        rawData = JSON.parse(cleanJsonString);
+
         if (!rawData) rawData = {};
 
         buildMarkedText();
