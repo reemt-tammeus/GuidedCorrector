@@ -52,7 +52,16 @@ function copyPromptAndProceed() {
     const cp = document.getElementById('contentPoints').value;
     const text = document.getElementById('studentText').value;
 
-    if (!text || !cp) { alert("Bitte fülle alle Textfelder aus!"); return; }
+    if (!text || !cp) { 
+        alert("Bitte fülle alle Textfelder aus!"); 
+        return; 
+    }
+
+    // SICHERHEITS-CHECK: Verhindert, dass JSON als Schülertext eingefügt wird
+    if (text.trim().startsWith('{') && text.trim().endsWith('}')) {
+        alert("⚠️ Halt! Du hast das KI-JSON in das Feld für den Schülertext eingefügt.\n\nBitte füge hier auf Screen 2 den ECHTEN, englischen Text des Schülers ein. Das JSON wird erst im nächsten Schritt benötigt.");
+        return;
+    }
 
     const systemPrompt = `Du bist der KI-Tutor "GuidedCorrector" (Level B1+).
 Analysiere den folgenden Text basierend auf diesen Prompts: [${cp}]
@@ -155,7 +164,7 @@ function buildMarkedText() {
     // 4. Content Analysis: Echte <sup> Tags für sicheren Word-Export
     if(rawData.content_analysis) {
         rawData.content_analysis.forEach(ca => {
-            // Topic Sentence = 0 (Check auf neue oder alte JSON-Struktur)
+            // Topic Sentence = 0
             let ts = ca.ts_quote || ca.topic_sentence_quote;
             if(ts && ts.trim() !== "") {
                 let safeTS = makeFlexibleRegex(ts.trim());
