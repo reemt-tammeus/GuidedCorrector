@@ -434,4 +434,3 @@ function loopNewGenre() {
     document.getElementById('contentPoints').value = "";
     navTo('screen-1');
 }
-```
