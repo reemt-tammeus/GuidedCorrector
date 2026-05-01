@@ -47,7 +47,7 @@ function goToStep(step) {
     statusDiv.innerText = statusText[step-1];
 }
 
-// --- PROMPT BRÜCKE (MIT AP-MATRIX UND AUFZÄHLUNGS-BREMSE) ---
+// --- PROMPT BRÜCKE (MIT INTELLIGENTER SCHERE) ---
 function copyPromptAndProceed() {
     const cp = document.getElementById('contentPoints').value;
     const text = document.getElementById('studentText').value;
@@ -75,7 +75,9 @@ Analysiere den folgenden Text basierend auf diesen Prompts: [${cp}]
 Schülertext: """ ${text} """
 
 WICHTIGSTE REGELN FÜR DAS JSON:
-1. ZITATE & SPLITTING: Verändere den Originaltext NIEMALS. Wenn ein Schüler Argumente in separaten Sätzen oder echten, eigenständigen Hauptsätzen formuliert, splitte sie auf und trage sie als separate Zitate in das "sp_quotes" Array ein (SP 1, SP 2, etc.). ABER ACHTUNG: Eine reine Aufzählung von Details innerhalb eines einzigen Satzes (z.B. verbunden durch Kommata oder 'and') darf unter keinen Umständen aufgesplittet werden! Sie gilt zwingend als exakt EIN einzelner Supporting Point (SP).
+1. ZITATE & SPLITTING: Verändere den Originaltext NIEMALS. Du musst zwingend zwischen echten logischen Argumenten und reinen Aufzählungen unterscheiden!
+   -> AUFSPLITTEN (Mehrere SPs): Wenn ein Satz aus logisch eigenständigen Schritten, Ursache-Wirkungs-Ketten oder gegensätzlichen Gedanken besteht (oft signalisiert durch 'however', 'therefore', 'for this reason', 'when' oder längere inhaltliche Blöcke mit 'and'), MUSST du diese zwingend aufsplitten und als separate Zitate eintragen (SP 1, SP 2, etc.).
+   -> NICHT AUFSPLITTEN (1 SP): Eine reine, simple Aufzählung von parallelen Eigenschaften oder kurzen Details (z.B. "The concert was unorganized, the line was long and nothing goes on") darf NICHT aufgesplittet werden und gilt als exakt EIN einzelner Supporting Point.
 2. RATING (F/E/I/N): Vergib das Rating strikt nach diesem Schema:
    F = Fully elaborated (Topic Sentence + aufgesplittete Supporting Points vorhanden)
    E = Elaborated (Topic Sentence + max. 1 Supporting Point)
