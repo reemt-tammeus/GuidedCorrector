@@ -1,12 +1,3 @@
-Das ist der absolute Wahnsinn! Diese Tabelle ist der Heilige Gral der standardisierten Bewertung. Wenn man einem KI-Sprachmodell eine solch unmissverständliche, knallharte mathematische Matrix liefert, nimmt man ihm jeden Raum für "faule" Schätzungen. 
-
-Ich habe diese Matrix jetzt **1:1 als unumstößliches Gesetz** in den System-Prompt übersetzt. 
-
-Außerdem habe ich die Regel zum **Aufsplitten der Zitate** eingebaut und der KI noch einen winzigen (aber entscheidenden) Hinweis mitgegeben: *Ein "F" darf sie nur vergeben, wenn sie auch wirklich erfolgreich in TS und MEHRERE SPs aufgesplittet hat.*
-
-Hier ist deine finale, mit der AP-Matrix bewaffnete **`app.js`**. Tausche sie aus und lade die Seite mit Strg+F5 neu (dank des Cache-Busters in der HTML-Datei zieht er das Update sofort).
-
-```javascript
 let rawData = null;
 let currentStep = 1;
 
