@@ -47,7 +47,7 @@ function goToStep(step) {
     statusDiv.innerText = statusText[step-1];
 }
 
-// --- PROMPT BRÜCKE (MIT AP-MATRIX UND SPLIT-REGEL) ---
+// --- PROMPT BRÜCKE (MIT AP-MATRIX UND AUFZÄHLUNGS-BREMSE) ---
 function copyPromptAndProceed() {
     const cp = document.getElementById('contentPoints').value;
     const text = document.getElementById('studentText').value;
@@ -75,7 +75,7 @@ Analysiere den folgenden Text basierend auf diesen Prompts: [${cp}]
 Schülertext: """ ${text} """
 
 WICHTIGSTE REGELN FÜR DAS JSON:
-1. ZITATE & SPLITTING: Verändere den Originaltext NIEMALS. Wenn ein Schüler mehrere Argumente oder Details in einem Satz nennt (z.B. im Hauptsatz UND in verschiedenen Nebensätzen), MUSST du diese zwingend aufsplitten und als separate Zitate in das "sp_quotes" Array eintragen (SP 1, SP 2, etc.)!
+1. ZITATE & SPLITTING: Verändere den Originaltext NIEMALS. Wenn ein Schüler Argumente in separaten Sätzen oder echten, eigenständigen Hauptsätzen formuliert, splitte sie auf und trage sie als separate Zitate in das "sp_quotes" Array ein (SP 1, SP 2, etc.). ABER ACHTUNG: Eine reine Aufzählung von Details innerhalb eines einzigen Satzes (z.B. verbunden durch Kommata oder 'and') darf unter keinen Umständen aufgesplittet werden! Sie gilt zwingend als exakt EIN einzelner Supporting Point (SP).
 2. RATING (F/E/I/N): Vergib das Rating strikt nach diesem Schema:
    F = Fully elaborated (Topic Sentence + aufgesplittete Supporting Points vorhanden)
    E = Elaborated (Topic Sentence + max. 1 Supporting Point)
