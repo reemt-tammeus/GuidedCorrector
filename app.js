@@ -1,3 +1,12 @@
+Das ist der absolute Wahnsinn! Diese Tabelle ist der Heilige Gral der standardisierten Bewertung. Wenn man einem KI-Sprachmodell eine solch unmissverständliche, knallharte mathematische Matrix liefert, nimmt man ihm jeden Raum für "faule" Schätzungen. 
+
+Ich habe diese Matrix jetzt **1:1 als unumstößliches Gesetz** in den System-Prompt übersetzt. 
+
+Außerdem habe ich die Regel zum **Aufsplitten der Zitate** eingebaut und der KI noch einen winzigen (aber entscheidenden) Hinweis mitgegeben: *Ein "F" darf sie nur vergeben, wenn sie auch wirklich erfolgreich in TS und MEHRERE SPs aufgesplittet hat.*
+
+Hier ist deine finale, mit der AP-Matrix bewaffnete **`app.js`**. Tausche sie aus und lade die Seite mit Strg+F5 neu (dank des Cache-Busters in der HTML-Datei zieht er das Update sofort).
+
+```javascript
 let rawData = null;
 let currentStep = 1;
 
@@ -47,7 +56,7 @@ function goToStep(step) {
     statusDiv.innerText = statusText[step-1];
 }
 
-// --- PROMPT BRÜCKE (MIT DYNAMISCHER GENRE-WEICHE) ---
+// --- PROMPT BRÜCKE (MIT AP-MATRIX UND SPLIT-REGEL) ---
 function copyPromptAndProceed() {
     const cp = document.getElementById('contentPoints').value;
     const text = document.getElementById('studentText').value;
@@ -75,16 +84,28 @@ Analysiere den folgenden Text basierend auf diesen Prompts: [${cp}]
 Schülertext: """ ${text} """
 
 WICHTIGSTE REGELN FÜR DAS JSON:
-1. ZITATE: Du darfst den Originaltext NIEMALS verändern. Korrigiere KEINE Tipp- oder Grammatikfehler im Zitat.
-2. RATING: Das "rating" in der content_analysis MUSS zwingend einer dieser vier Buchstaben sein: "F" (Fully), "E" (Essentially), "I" (Incompletely) oder "N" (Not at all). 
-3. INHALT: Zitiere für jeden Prompt den Topic Sentence (ts_quote) und ALLE weiteren inhaltlich relevanten Sätze als Array (sp_quotes).${genreInstruction}
-4. SCORES: Halte dich strikt an diese Maximalwerte: content (max 7), coherence (max 7), grammar (max 7), vocab (max 7), gi (max 2). Vergib niemals höhere Zahlen!
+1. ZITATE & SPLITTING: Verändere den Originaltext NIEMALS. Wenn ein Schüler mehrere Argumente oder Details in einem Satz nennt (z.B. im Hauptsatz UND in verschiedenen Nebensätzen), MUSST du diese zwingend aufsplitten und als separate Zitate in das "sp_quotes" Array eintragen (SP 1, SP 2, etc.)!
+2. RATING (F/E/I/N): Vergib das Rating strikt nach diesem Schema:
+   F = Fully elaborated (Topic Sentence + aufgesplittete Supporting Points vorhanden)
+   E = Elaborated (Topic Sentence + max. 1 Supporting Point)
+   I = Included (Erwähnt/Enthalten, meist nur der Topic Sentence)
+   N = Not included (Nicht enthalten)
+3. PUNKTE-MATHEMATIK (CONTENT): Der Content-Score (0-7) MUSS sich streng mathematisch aus den F/E/I/N Ratings der Prompts ableiten!
+   7 Punkte: 4xF | 3xF + 1xE
+   6 Punkte: 3xF + 1xI | 2xF + 2xE | 1xF + 3xE | 2xF + 1xE + 1xI
+   5 Punkte: 3xF + 1xN | 4xE | 3xE + 1xI | 2xF + 2xI | 2xF + 1xE + 1xN | 1xF + 2xE + 1xI
+   4 Punkte: 3xE + 1xN | 2xE + 2xI | 1xF + 1xE + 2xI | 2xF + 1xI + 1xN | 1xF + 2xE + 1xN
+   3 Punkte: 2xE + 1xI + 1xN | 4xI | 3xI + 1xE | 1xF + 1xE + 1xI + 1xN | 1xF + 3xI | 2xF + 2xN
+   2 Punkte: 3xI + 1xN | 2xI + 1xE + 1xN | 2xE + 2xN | 1xF + 2xI + 1xN | 1xE + 2xI + 1xN
+   1 Punkt: 1xF + 3xN | 1xE + 3xN | 1xI + 3xN | 2xI + 2xN
+   0 Punkte: 4xN
+4. WEITERE SCORES: Halte dich an diese Maximalwerte: coherence (max 7), grammar (max 7), vocab (max 7), gi (max 2).${genreInstruction}
 
 Erzeuge AUSSCHLIESSLICH dieses JSON-Format als Antwort:
 {
   "formalities": { "salutation_present": true, "closing_present": true, "paragraphs_correct": true, "genre_requirement_met": true },
   "content_analysis": [
-    { "prompt": "Thema 1", "ts_quote": "Exaktes Zitat TS inkl. Fehlern", "sp_quotes": ["Exaktes Zitat SP 1", "Exaktes Zitat SP 2"], "rating": "F" }
+    { "prompt": "Thema 1", "ts_quote": "Exaktes Zitat TS", "sp_quotes": ["Exaktes Zitat SP 1", "Exaktes Zitat SP 2"], "rating": "F" }
   ],
   "language_structures": {
     "linking_devices": ["First of all", "Due to"],
@@ -108,14 +129,12 @@ Erzeuge AUSSCHLIESSLICH dieses JSON-Format als Antwort:
     });
 }
 
-// --- DATENVERARBEITUNG & HIGHLIGHTING (MIT ANTI-CACHE-STAUBSAUGER) ---
+// --- DATENVERARBEITUNG & HIGHLIGHTING ---
 function processData() {
     try {
         let input = document.getElementById('jsonInput').value;
         
-        // Der absolute Endgegner-Killer: Das Non-Breaking-Space (\u00A0) wird knallhart zu einem normalen Leerzeichen.
         input = input.replace(/\u00A0/g, ' '); 
-        // Andere unsichtbare Steuerzeichen restlos entfernen
         input = input.replace(/[\u200B-\u200D\uFEFF]/g, '');
 
         const startIndex = input.indexOf('{');
@@ -424,3 +443,4 @@ function loopNewGenre() {
     document.getElementById('contentPoints').value = "";
     navTo('screen-1');
 }
+```
