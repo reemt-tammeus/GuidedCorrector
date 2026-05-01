@@ -47,7 +47,7 @@ function goToStep(step) {
     statusDiv.innerText = statusText[step-1];
 }
 
-// --- PROMPT BRÜCKE (MIT INTELLIGENTER SCHERE) ---
+// --- PROMPT BRÜCKE (EXAKTES BEWERTUNGSSCHEMA) ---
 function copyPromptAndProceed() {
     const cp = document.getElementById('contentPoints').value;
     const text = document.getElementById('studentText').value;
@@ -75,15 +75,13 @@ Analysiere den folgenden Text basierend auf diesen Prompts: [${cp}]
 Schülertext: """ ${text} """
 
 WICHTIGSTE REGELN FÜR DAS JSON:
-1. ZITATE & SPLITTING: Verändere den Originaltext NIEMALS. Du musst zwingend zwischen echten logischen Argumenten und reinen Aufzählungen unterscheiden!
-   -> AUFSPLITTEN (Mehrere SPs): Wenn ein Satz aus logisch eigenständigen Schritten, Ursache-Wirkungs-Ketten oder gegensätzlichen Gedanken besteht (oft signalisiert durch 'however', 'therefore', 'for this reason', 'when' oder längere inhaltliche Blöcke mit 'and'), MUSST du diese zwingend aufsplitten und als separate Zitate eintragen (SP 1, SP 2, etc.).
-   -> NICHT AUFSPLITTEN (1 SP): Eine reine, simple Aufzählung von parallelen Eigenschaften oder kurzen Details (z.B. "The concert was unorganized, the line was long and nothing goes on") darf NICHT aufgesplittet werden und gilt als exakt EIN einzelner Supporting Point.
-2. RATING (F/E/I/N): Vergib das Rating strikt nach diesem Schema:
-   F = Fully elaborated (Topic Sentence + aufgesplittete Supporting Points vorhanden)
-   E = Elaborated (Topic Sentence + max. 1 Supporting Point)
-   I = Included (Erwähnt/Enthalten, meist nur der Topic Sentence)
-   N = Not included (Nicht enthalten)
-3. PUNKTE-MATHEMATIK (CONTENT): Der Content-Score (0-7) MUSS sich streng mathematisch aus den F/E/I/N Ratings der Prompts ableiten!
+1. ZITATE & SPLITTING: Verändere den Originaltext NIEMALS. Zitiere den Topic Sentence ("ts_quote"). Splitte weitere eigenständige inhaltliche Aussagen, Ursachen oder Folgen zwingend in SEPARATE Zitate auf und füge sie dem Array "sp_quotes" hinzu.
+2. RATING (F/E/I/N) - DEFINITIONEN: Bewerte jeden Prompt inhaltlich nach genau diesen Vorgaben:
+   F = Fully elaborated (Vollständig ausgearbeitet)
+   E = Elaborated (Ausgearbeitet)
+   I = Included (Erwähnt/Enthalten)
+   N = Not included / Omitted (Nicht enthalten)
+3. PUNKTE-MATHEMATIK (CONTENT): Der Content-Score (0-7) MUSS sich streng aus der Kombination der 4 F/E/I/N Ratings ableiten. Nutze EXAKT dieses Schema:
    7 Punkte: 4xF | 3xF + 1xE
    6 Punkte: 3xF + 1xI | 2xF + 2xE | 1xF + 3xE | 2xF + 1xE + 1xI
    5 Punkte: 3xF + 1xN | 4xE | 3xE + 1xI | 2xF + 2xI | 2xF + 1xE + 1xN | 1xF + 2xE + 1xI
