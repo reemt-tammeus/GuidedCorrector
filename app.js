@@ -47,7 +47,7 @@ function goToStep(step) {
     statusDiv.innerText = statusText[step-1];
 }
 
-// --- PROMPT BRÜCKE (EXAKTES BEWERTUNGSSCHEMA) ---
+// --- PROMPT BRÜCKE (INKL. NEEDS_REVIEW FLAG) ---
 function copyPromptAndProceed() {
     const cp = document.getElementById('contentPoints').value;
     const text = document.getElementById('studentText').value;
@@ -75,28 +75,21 @@ Analysiere den folgenden Text basierend auf diesen Prompts: [${cp}]
 Schülertext: """ ${text} """
 
 WICHTIGSTE REGELN FÜR DAS JSON:
-1. ZITATE & SPLITTING: Verändere den Originaltext NIEMALS. Zitiere den Topic Sentence ("ts_quote"). Splitte weitere eigenständige inhaltliche Aussagen, Ursachen oder Folgen zwingend in SEPARATE Zitate auf und füge sie dem Array "sp_quotes" hinzu.
-2. RATING (F/E/I/N) - DEFINITIONEN: Bewerte jeden Prompt inhaltlich nach genau diesen Vorgaben:
-   F = Fully elaborated (Vollständig ausgearbeitet)
-   E = Elaborated (Ausgearbeitet)
-   I = Included (Erwähnt/Enthalten)
-   N = Not included / Omitted (Nicht enthalten)
-3. PUNKTE-MATHEMATIK (CONTENT): Der Content-Score (0-7) MUSS sich streng aus der Kombination der 4 F/E/I/N Ratings ableiten. Nutze EXAKT dieses Schema:
-   7 Punkte: 4xF | 3xF + 1xE
-   6 Punkte: 3xF + 1xI | 2xF + 2xE | 1xF + 3xE | 2xF + 1xE + 1xI
-   5 Punkte: 3xF + 1xN | 4xE | 3xE + 1xI | 2xF + 2xI | 2xF + 1xE + 1xN | 1xF + 2xE + 1xI
-   4 Punkte: 3xE + 1xN | 2xE + 2xI | 1xF + 1xE + 2xI | 2xF + 1xI + 1xN | 1xF + 2xE + 1xN
-   3 Punkte: 2xE + 1xI + 1xN | 4xI | 3xI + 1xE | 1xF + 1xE + 1xI + 1xN | 1xF + 3xI | 2xF + 2xN
-   2 Punkte: 3xI + 1xN | 2xI + 1xE + 1xN | 2xE + 2xN | 1xF + 2xI + 1xN | 1xE + 2xI + 1xN
-   1 Punkt: 1xF + 3xN | 1xE + 3xN | 1xI + 3xN | 2xI + 2xN
-   0 Punkte: 4xN
-4. WEITERE SCORES: Halte dich an diese Maximalwerte: coherence (max 7), grammar (max 7), vocab (max 7), gi (max 2).${genreInstruction}
+1. ZITATE & SPLITTING: Verändere den Originaltext NIEMALS. Zitiere den Topic Sentence ("ts_quote"). Splitte weitere inhaltliche Aussagen, Ursachen oder Folgen zwingend in SEPARATE Zitate auf ("sp_quotes"). WICHTIG: Jeder SP muss in der Regel in einem eigenen Satz stehen.
+2. RATING (F/E/I/N) - EXAKTE VORGABE: Du bewertest AUSSCHLIESSLICH nach der Anzahl der gefundenen Elemente:
+   F = Topic Sentence ("ts_quote") UND mindestens 2 Zitate in "sp_quotes" vorhanden.
+   E = Topic Sentence ("ts_quote") UND exakt 1 Zitat in "sp_quotes" vorhanden.
+   I = Topic Sentence ("ts_quote") vorhanden, ABER "sp_quotes" ist leer (0 SPs).
+   N = Weder Topic Sentence noch Supporting Points vorhanden.
+3. UNSICHERHEIT ("needs_review"): Wenn du dir bei der Bewertung unsicher bist ODER wenn ein Schüler mehrere wichtige Gedanken in einem einzigen, langen Bandwurmsatz verpackt hat (den du laut strenger Regelung evtl. abwerten müsstest), setze zwingend den Wert "needs_review": true für diesen Prompt.
+4. PUNKTE: Die finale Punktzahl (0-7) berechnet die App selbst aus der F/E/I/N-Matrix. Gib einfach einen Schätzwert an.
+5. WEITERE SCORES: Halte dich an diese Maximalwerte: coherence (max 7), grammar (max 7), vocab (max 7), gi (max 2).${genreInstruction}
 
 Erzeuge AUSSCHLIESSLICH dieses JSON-Format als Antwort:
 {
   "formalities": { "salutation_present": true, "closing_present": true, "paragraphs_correct": true, "genre_requirement_met": true },
   "content_analysis": [
-    { "prompt": "Thema 1", "ts_quote": "Exaktes Zitat TS", "sp_quotes": ["Exaktes Zitat SP 1", "Exaktes Zitat SP 2"], "rating": "F" }
+    { "prompt": "Thema 1", "ts_quote": "Exaktes Zitat TS", "sp_quotes": ["Exaktes Zitat SP 1", "Exaktes Zitat SP 2"], "rating": "F", "needs_review": true }
   ],
   "language_structures": {
     "linking_devices": ["First of all", "Due to"],
@@ -141,6 +134,8 @@ function processData() {
 
         if (!rawData) rawData = {};
 
+        calculateInitialContentScore();
+
         buildMarkedText();
         buildWizardPanels();
         
@@ -151,6 +146,83 @@ function processData() {
     } catch (e) {
         alert("Fehler beim Auslesen des JSON. Bitte prüfe den Output der KI.\n\nTechnischer Grund: " + e.message);
     }
+}
+
+// --- ZENTRALE MATH-LOGIK FÜR DIE MATRIX ---
+function getScoreFromRatings(f, e, i, n) {
+    let score = 0;
+    if (f === 4) score = 7;
+    else if (f === 3 && e === 1) score = 7;
+    else if (f === 3 && i === 1) score = 6;
+    else if (f === 2 && e === 2) score = 6;
+    else if (f === 1 && e === 3) score = 6;
+    else if (f === 2 && e === 1 && i === 1) score = 6;
+    else if (f === 3 && n === 1) score = 5;
+    else if (e === 4) score = 5;
+    else if (e === 3 && i === 1) score = 5;
+    else if (f === 2 && i === 2) score = 5;
+    else if (f === 2 && e === 1 && n === 1) score = 5;
+    else if (f === 1 && e === 2 && i === 1) score = 5;
+    else if (e === 3 && n === 1) score = 4;
+    else if (e === 2 && i === 2) score = 4;
+    else if (f === 1 && e === 1 && i === 2) score = 4;
+    else if (f === 2 && i === 1 && n === 1) score = 4;
+    else if (f === 1 && e === 2 && n === 1) score = 4;
+    else if (e === 2 && i === 1 && n === 1) score = 3;
+    else if (i === 4) score = 3;
+    else if (i === 3 && e === 1) score = 3;
+    else if (f === 1 && e === 1 && i === 1 && n === 1) score = 3;
+    else if (f === 1 && i === 3) score = 3;
+    else if (f === 2 && n === 2) score = 3;
+    else if (i === 3 && n === 1) score = 2;
+    else if (i === 2 && e === 1 && n === 1) score = 2;
+    else if (e === 2 && n === 2) score = 2;
+    else if (f === 1 && i === 2 && n === 1) score = 2;
+    else if (e === 1 && i === 2 && n === 1) score = 2;
+    else if (f === 1 && n === 3) score = 1;
+    else if (e === 1 && n === 3) score = 1;
+    else if (i === 1 && n === 3) score = 1;
+    else if (i === 2 && n === 2) score = 1;
+    else if (n === 4) score = 0;
+    return score;
+}
+
+function calculateInitialContentScore() {
+    if (!rawData || !rawData.content_analysis) return;
+    let f = 0, e = 0, i = 0, n = 0;
+    rawData.content_analysis.forEach(ca => {
+        if (ca.rating === 'F') f++;
+        if (ca.rating === 'E') e++;
+        if (ca.rating === 'I') i++;
+        if (ca.rating === 'N') n++;
+    });
+    
+    let score = getScoreFromRatings(f, e, i, n);
+
+    if (!rawData.scores) rawData.scores = {};
+    rawData.scores.content = score;
+    if (!rawData.scores.reasoning) rawData.scores.reasoning = {};
+    rawData.scores.reasoning.content = `Auto-Kalkulation: Das Raster (${f}xF, ${e}xE, ${i}xI, ${n}xN) ergibt streng nach Regelwerk exakt ${score} Punkte.`;
+}
+
+// --- DYNAMISCHE NEUBERECHNUNG DURCH DROPDOWNS ---
+function recalculateContentFromDropdowns() {
+    if (!rawData || !rawData.content_analysis) return;
+    let f = 0, e = 0, i = 0, n = 0;
+    
+    rawData.content_analysis.forEach((ca, idx) => {
+        let val = document.getElementById(`rating-dropdown-${idx}`).value;
+        ca.rating = val; // Überschreibt die Rohdaten für den Export
+        if(val === 'F') f++;
+        if(val === 'E') e++;
+        if(val === 'I') i++;
+        if(val === 'N') n++;
+    });
+
+    let score = getScoreFromRatings(f, e, i, n);
+    
+    document.getElementById('score-content').value = score;
+    document.getElementById('reason-content').value = `Manuell angepasst: Das Raster (${f}xF, ${e}xE, ${i}xI, ${n}xN) ergibt nach Matrix exakt ${score} Punkte.`;
 }
 
 function makeFlexibleRegex(str) {
@@ -218,14 +290,35 @@ function buildMarkedText() {
 }
 
 function buildWizardPanels() {
+    let needsReviewGlobal = false;
     let cHtml = "<table style='width:100%; font-size:0.9em; text-align:left;'><tr><th>Prompt</th><th>Rating</th></tr>";
+    
     if(Array.isArray(rawData?.content_analysis)) {
-        rawData.content_analysis.forEach(ca => {
+        rawData.content_analysis.forEach((ca, idx) => {
             if(!ca) return;
-            cHtml += `<tr><td style='border-bottom:1px solid #444; padding:5px;'>${ca.prompt || '?'}</td><td style='border-bottom:1px solid #444; padding:5px; color:var(--secondary); font-weight:bold;'>${ca.rating || '-'}</td></tr>`;
+            
+            // Check für Rosa-Markierung
+            if(ca.needs_review === true) needsReviewGlobal = true;
+            let titleColor = ca.needs_review ? "color: #ff69b4; font-weight: bold;" : "color: var(--text-light);";
+
+            // Dynamisches Dropdown-Menü
+            let selectHtml = `<select id="rating-dropdown-${idx}" onchange="recalculateContentFromDropdowns()" style="background: rgba(0,0,0,0.3); border: 1px solid #444; color: var(--secondary); font-weight: bold; padding: 2px; border-radius: 4px; cursor: pointer;">
+                <option value="F" ${ca.rating==='F'?'selected':''}>F</option>
+                <option value="E" ${ca.rating==='E'?'selected':''}>E</option>
+                <option value="I" ${ca.rating==='I'?'selected':''}>I</option>
+                <option value="N" ${ca.rating==='N'?'selected':''}>N</option>
+            </select>`;
+
+            cHtml += `<tr><td style='border-bottom:1px solid #444; padding:8px; ${titleColor}'>${ca.prompt || '?'}</td><td style='border-bottom:1px solid #444; padding:8px;'>${selectHtml}</td></tr>`;
         });
     }
     cHtml += "</table>";
+
+    // Einfügen der rosa Warnmeldung falls nötig
+    if (needsReviewGlobal) {
+        cHtml += `<div style="color: #ff69b4; font-weight: bold; margin-top: 15px; font-size: 0.9em; background: rgba(255, 105, 180, 0.1); padding: 10px; border-radius: 4px;">⚠️ Bei diesen rosa markierten Content Points (CP) bin ich mir bei der Bewertung nicht sicher. Bitte kontrolliere sie nochmal.</div>`;
+    }
+
     document.getElementById('contentMatrix').innerHTML = cHtml;
 
     document.getElementById('linkingList').innerText = Array.isArray(rawData?.language_structures?.linking_devices) ? rawData.language_structures.linking_devices.join(', ') : '';
