@@ -4,204 +4,199 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GuidedCorrector</title>
-    <!-- Hier war der Fehler: Es heißt meistens style.css (ohne s) -->
-    <link rel="stylesheet" href="style.css?v=9">
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <!-- ==========================================
-         SCREEN 1: Setup & Content Points
-    =========================================== -->
-    <div id="screen-1" class="screen active">
-        <h1>GuidedCorrector Setup</h1>
-        
-        <div class="form-group">
-            <label>Textart:</label>
-            <select id="textType" onchange="updateSubtypes()">
-                <option value="letter">Letter / Email</option>
-                <option value="creative">Creative Writing</option>
-                <option value="essay">Essay / Article</option>
-            </select>
-        </div>
+<div id="bg-layer"></div>
+<div id="bg-overlay"></div>
 
-        <div class="form-group" id="subTypeWrapper">
-            <label>Sub-Typ (Wichtig für Formalities):</label>
+<div id="screen-1" class="screen active">
+    <div class="glass-box">
+        <h1>GuidedCorrector</h1>
+        <h2>Guided Writing Evaluator</h2>
+        
+        <label>Mode</label>
+        <select id="appMode">
+            <option value="school">School</option>
+            <option value="private">Private (Coming Soon)</option>
+        </select>
+
+        <label>Type of Text</label>
+        <select id="textType" onchange="updateSubtypes()">
+            <option value="letter">Letter</option>
+            <option value="creative">Creative Text</option>
+        </select>
+        
+        <div id="subTypeWrapper">
+            <label>Subgenre</label>
             <select id="subType">
-                <option value="complaint">Complaint (Letter of Complaint)</option>
-                <option value="application">Application (Letter of Application)</option>
-                <option value="informal">Informal Letter</option>
-                <option value="other">Other / Standard</option>
+                <option value="personal">Personal Letter</option>
+                <option value="application">Letter of Application</option>
+                <option value="complaint">Letter of Complaint</option>
             </select>
         </div>
 
-        <div class="form-group">
-            <label>Content Points (Prompts):</label>
-            <textarea id="contentPoints" rows="5" placeholder="z.B. chaos at the entrance, poor sound, situation at the food stands..."></textarea>
-        </div>
-
-        <button class="btn-primary" onclick="navTo('screen-2')">Texteingabe starten ➔</button>
+        <button class="btn-start" onclick="navTo('screen-2')">Texteingabe starten</button>
+        <div class="branding-note">created by Mr. T. & Master E.</div>
     </div>
+</div>
 
-    <!-- ==========================================
-         SCREEN 2: Schülertext Eingabe
-    =========================================== -->
-    <div id="screen-2" class="screen">
-        <h1>Schülertext eingeben</h1>
-        <textarea id="studentText" rows="15" placeholder="Füge hier den Text des Schülers ein..."></textarea>
+<div id="screen-2" class="screen">
+    <div class="work-container">
+        <div class="split-view">
+            <div class="col-1-3 panel">
+                <h2>Content Points (Prompts)</h2>
+                <textarea id="contentPoints" placeholder="Z.B. - describe your problem..."></textarea>
+            </div>
+            <div class="col-2-3 panel">
+                <h2>Student's Text</h2>
+                <textarea id="studentText" placeholder="Schülertext hier einfügen (200-350 Wörter)..."></textarea>
+            </div>
+        </div>
+        <div class="panel" style="padding: 15px;">
+            <button class="btn-primary" onclick="copyPromptAndProceed()">System-Prompt für ByLKI kopieren & Weiter</button>
+        </div>
+    </div>
+</div>
+
+<div id="screen-3" class="screen">
+    <button class="emergency-exit" onclick="emergencyExit()">⚠️ Abbrechen & Neu</button>
+    <div class="work-container" style="justify-content: center; align-items: center; max-width: 800px; margin: auto;">
+        <div class="panel" style="width: 100%; text-align: center;">
+            <h2 style="color: var(--success);">Prompt kopiert!</h2>
+            <p>Füge den Prompt in die ByLKI ein und kopiere das JSON-Ergebnis hierher.</p>
+            <textarea id="jsonInput" rows="10" placeholder="Füge hier das KI-Ergebnis ein..." style="margin-top: 20px; margin-bottom: 20px;"></textarea>
+            <button class="btn-success" onclick="processData()">Daten auswerten & Korrektur starten</button>
+        </div>
+    </div>
+</div>
+
+<div id="screen-4" class="screen">
+    <button class="emergency-exit" onclick="emergencyExit()">⚠️ Abbrechen & Neu</button>
+    <div class="work-container">
         
-        <div class="button-row">
-            <button class="btn-secondary" onclick="navTo('screen-1')">⬅️ Zurück</button>
-            <button class="btn-primary" onclick="copyPromptAndProceed()">Prompt in Zwischenablage kopieren & Weiter ➔</button>
-        </div>
-    </div>
-
-    <!-- ==========================================
-         SCREEN 3: KI JSON Input
-    =========================================== -->
-    <div id="screen-3" class="screen">
-        <h1>KI Analyse einfügen</h1>
-        <p>Wechsle zu ChatGPT/Claude, füge den kopierten Prompt ein und kopiere die Antwort (das JSON) hier hinein:</p>
-        <textarea id="jsonInput" rows="15" placeholder="{ ... JSON hier einfügen ... }"></textarea>
-        
-        <div class="button-row">
-            <button class="btn-secondary" onclick="navTo('screen-2')">⬅️ Zurück</button>
-            <button class="btn-primary" onclick="processData()">Daten verarbeiten ➔</button>
-        </div>
-    </div>
-
-    <!-- ==========================================
-         SCREEN 4: Main Workspace / Wizard
-    =========================================== -->
-    <div id="screen-4" class="screen">
-        <div class="workspace-container">
-            
-            <!-- LINKE SEITE: Marked Text -->
-            <div class="text-panel">
+        <div class="split-view">
+            <div class="col-2-3 panel" style="display: flex; flex-direction: column;">
                 <h2>Marked Student Text</h2>
-                <div id="markedTextDisplay" class="marked-text-area"></div>
+                <div id="markedTextDisplay" class="marked-text-area step-1-view"></div>
+                <div id="viewStatus" style="margin-top: 15px; font-size: 0.9em; color: #aaa; text-align: right;"></div>
             </div>
 
-            <!-- RECHTE SEITE: Wizard Panels -->
-            <div class="wizard-panel">
-                <div class="wizard-header">
-                    <div id="viewStatus" class="status-badge">👁️ Ansicht 1: Content</div>
-                    <button onclick="emergencyExit()" class="btn-warning">⚠️ Abbrechen & Neu</button>
-                </div>
-
-                <!-- STEP 1: Content -->
+            <div class="col-1-3 panel scroll-box" style="position: relative;">
+                
                 <div id="wizard-step-1" class="wizard-step active">
-                    <h3>RUBRIK 1 / 5<br>Content</h3>
-                    <p class="help-text">Blaue Zahlen im Text: 0 = Topic Sentence, 1+ = Supporting Points.</p>
+                    <div class="step-indicator">Rubrik 1 / 5</div>
+                    <h3>Content</h3>
+                    <p class="hint-text">Blaue Zahlen im Text: 0 = Topic Sentence, 1+ = Supporting Points.</p>
+                    <div id="contentMatrix" style="margin-bottom: 15px;"></div>
                     
-                    <div id="contentMatrix" class="matrix-container"></div>
-
-                    <div class="score-box">
-                        <label>Content Score (max 7)</label>
-                        <input type="number" id="score-content" min="0" max="7" readonly style="background: rgba(0,0,0,0.2); cursor: not-allowed;">
-                        <textarea id="reason-content" rows="3" readonly style="background: rgba(0,0,0,0.1); cursor: not-allowed;"></textarea>
+                    <div class="score-card">
+                        <div class="score-row">
+                            <b>Content Score (max 7)</b>
+                            <input type="number" id="score-content" max="7" min="0">
+                        </div>
+                        <textarea id="reason-content" placeholder="Observation / Comment..." rows="2"></textarea>
                     </div>
-                    
-                    <button class="btn-next" onclick="goToStep(2)">Weiter zu Coherence ➔</button>
+                    <button class="btn-primary" onclick="goToStep(2)">Weiter zu Coherence ➡️</button>
                 </div>
 
-                <!-- STEP 2: Coherence -->
                 <div id="wizard-step-2" class="wizard-step">
-                    <h3>RUBRIK 2 / 5<br>Coherence & Formalities</h3>
-                    
-                    <h4>Linking Devices:</h4>
-                    <div id="linkingList" class="data-box"></div>
-                    
-                    <h4>Formalities Check:</h4>
-                    <ul id="formalChecklist" class="data-box checklist"></ul>
-
-                    <div class="score-box">
-                        <label>Coherence Score (max 7)</label>
-                        <div class="score-input-wrapper">
-                            <input type="number" id="score-coherence" min="0" max="7">
-                        </div>
-                        <textarea id="reason-coherence" rows="3" placeholder="Begründung..."></textarea>
+                    <div class="step-indicator">Rubrik 2 / 5</div>
+                    <h3>Coherence & Cohesion</h3>
+                    <p class="hint-text">Linking Devices leuchten grün.</p>
+                    <div class="info-box">
+                        <b>Linking Devices:</b> <span id="linkingList" style="color: var(--secondary)"></span>
                     </div>
-                    
-                    <div class="button-row">
-                        <button class="btn-secondary" onclick="goToStep(1)">⬅️ Zurück</button>
-                        <button class="btn-next" onclick="goToStep(3)">Weiter zu Grammar ➔</button>
+
+                    <div class="score-card">
+                        <div class="score-row">
+                            <b>Coherence Score (max 7)</b>
+                            <input type="number" id="score-coherence" max="7" min="0">
+                        </div>
+                        <textarea id="reason-coherence" placeholder="Observation / Comment..." rows="2"></textarea>
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="btn-secondary" style="flex: 1;" onclick="goToStep(1)">⬅️</button>
+                        <button class="btn-primary" style="flex: 3;" onclick="goToStep(3)">Weiter zu Grammar ➡️</button>
                     </div>
                 </div>
 
-                <!-- STEP 3: Grammar -->
                 <div id="wizard-step-3" class="wizard-step">
-                    <h3>RUBRIK 3 / 5<br>Grammar</h3>
+                    <div class="step-indicator">Rubrik 3 / 5</div>
+                    <h3>Grammar & Structures</h3>
+                    <p class="hint-text">Grammatik rot. Komplexe Strukturen grün unterstrichen.</p>
+                    <div id="grammarCardsArea" style="margin-bottom: 15px;"></div>
                     
-                    <h4>Errors:</h4>
-                    <div id="grammarCardsArea" class="cards-area"></div>
-                    
-                    <h4>Complex Structures:</h4>
-                    <div id="complexList" class="data-box"></div>
-
-                    <div class="score-box">
-                        <label>Grammar Score (max 7)</label>
-                        <div class="score-input-wrapper">
-                            <input type="number" id="score-grammar" min="0" max="7">
+                    <div class="info-box">
+                        <b>Complex Structures:</b> <span id="complexList" style="color: var(--secondary)"></span>
+                        <div style="margin-top: 10px; font-size: 0.85em; border-top: 1px solid rgba(255,255,255,0.2); padding-top: 5px; color: #f1c40f;">
+                            ⚠️ <b>Masterprompt-Regel:</b> Bereits der Versuch, komplexe Strukturen zu nutzen (auch wenn fehlerhaft), rechtfertigt 5 Punkte in dieser Rubrik.
                         </div>
-                        <textarea id="reason-grammar" rows="3" placeholder="Begründung..."></textarea>
                     </div>
-                    
-                    <div class="button-row">
-                        <button class="btn-secondary" onclick="goToStep(2)">⬅️ Zurück</button>
-                        <button class="btn-next" onclick="goToStep(4)">Weiter zu Vocabulary ➔</button>
+
+                    <div class="score-card">
+                        <div class="score-row">
+                            <b>Grammar Score (max 7)</b>
+                            <input type="number" id="score-grammar" max="7" min="0">
+                        </div>
+                        <textarea id="reason-grammar" placeholder="Observation / Comment..." rows="2"></textarea>
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="btn-secondary" style="flex: 1;" onclick="goToStep(2)">⬅️</button>
+                        <button class="btn-primary" style="flex: 3;" onclick="goToStep(4)">Weiter zu Vocabulary ➡️</button>
                     </div>
                 </div>
 
-                <!-- STEP 4: Vocabulary -->
                 <div id="wizard-step-4" class="wizard-step">
-                    <h3>RUBRIK 4 / 5<br>Vocabulary</h3>
-                    
-                    <h4>Errors:</h4>
-                    <div id="vocabCardsArea" class="cards-area"></div>
+                    <div class="step-indicator">Rubrik 4 / 5</div>
+                    <h3>Vocabulary & Spelling</h3>
+                    <p class="hint-text">Wortschatz- und Tippfehler leuchten orange.</p>
+                    <div id="vocabCardsArea" style="margin-bottom: 15px;"></div>
 
-                    <div class="score-box">
-                        <label>Vocabulary Score (max 7)</label>
-                        <div class="score-input-wrapper">
-                            <input type="number" id="score-vocab" min="0" max="7">
+                    <div class="score-card">
+                        <div class="score-row">
+                            <b>Vocab Score (max 7)</b>
+                            <input type="number" id="score-vocab" max="7" min="0">
                         </div>
-                        <textarea id="reason-vocab" rows="3" placeholder="Begründung..."></textarea>
+                        <textarea id="reason-vocab" placeholder="Observation / Comment..." rows="2"></textarea>
                     </div>
-                    
-                    <div class="button-row">
-                        <button class="btn-secondary" onclick="goToStep(3)">⬅️ Zurück</button>
-                        <button class="btn-next" onclick="goToStep(5)">Weiter zu Gen. Impression ➔</button>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="btn-secondary" style="flex: 1;" onclick="goToStep(3)">⬅️</button>
+                        <button class="btn-primary" style="flex: 3;" onclick="goToStep(5)">Weiter zu Gen. Impression ➡️</button>
                     </div>
                 </div>
 
-                <!-- STEP 5: General Impression & Export -->
                 <div id="wizard-step-5" class="wizard-step">
-                    <h3>RUBRIK 5 / 5<br>General Impression</h3>
+                    <div class="step-indicator">Rubrik 5 / 5</div>
+                    <h3>General Impression</h3>
+                    <ul id="formalChecklist" style="margin-bottom: 15px; font-size: 0.9em; color: #ccc;"></ul>
 
-                    <div class="score-box">
-                        <label>General Impression (max <span id="maxGiDisplay">2</span>)</label>
-                        <div class="score-input-wrapper">
-                            <input type="number" id="score-gi" min="0" max="2">
+                    <div class="score-card">
+                        <div class="score-row">
+                            <b>Impression Score (max <span id="maxGiDisplay">2</span>)</b>
+                            <input type="number" id="score-gi" max="2" min="0">
                         </div>
-                        <textarea id="reason-gi" rows="3" placeholder="Bemerkungen..."></textarea>
+                        <textarea id="reason-gi" placeholder="Observation / Comment..." rows="2"></textarea>
+                    </div>
+                    
+                    <div style="display: flex; gap: 10px; margin-top: 20px;">
+                        <button class="btn-secondary" style="flex: 1;" onclick="goToStep(4)">⬅️</button>
+                        <button id="btn-export" class="btn-success" style="flex: 3;" onclick="generateRTF()">💾 Buntes Word/RTF Exportieren</button>
                     </div>
 
-                    <div class="button-row">
-                        <button class="btn-secondary" onclick="goToStep(4)">⬅️ Zurück</button>
-                        <button id="btn-export" class="btn-success" onclick="generateRTF()">💾 Word-Feedback exportieren</button>
-                    </div>
-
-                    <!-- Loop Controls (werden erst nach dem Export sichtbar) -->
-                    <div id="loop-controls" class="loop-container" style="display:none;">
-                        <button class="btn-primary" onclick="loopSameGenre()">Nächster Schülertext (Gleiche Aufgabe)</button>
-                        <button class="btn-secondary" onclick="loopNewGenre()">Neue Aufgabe (Andere Prompts/Genre)</button>
+                    <div id="loop-controls">
+                        <button class="btn-primary" onclick="loopSameGenre()">🔄 Gleiches Genre, neuer Schüler</button>
+                        <button class="btn-danger" onclick="loopNewGenre()">🏠 Zurück zum Start</button>
                     </div>
                 </div>
 
             </div>
         </div>
-    </div>
 
-    <!-- Das JS Script -->
-    <script src="app.js?v=9"></script>
+    </div>
+</div>
+
+<script src="app.js?v=8"></script>
 </body>
 </html>
